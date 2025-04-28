@@ -10,10 +10,19 @@ import org.luaj.vm2.lib.OneArgFunction
 import org.luaj.vm2.lib.VarArgFunction
 import org.luaj.vm2.lib.jse.CoerceJavaToLua
 import tech.ezeny.luaKit.utils.PLog
+import java.lang.reflect.Method
 import kotlin.jvm.java
 
 object LuaValueFactory {
+    // 缓存类和属性方法的映射
+    private val methodCache: MutableMap<Class<*>, Map<String, Method>> = mutableMapOf()
 
+    /**
+     * 将 Java 对象转换为 Lua 值
+     *
+     * @param obj 需要转换的 Java 对象
+     * @return 转换后的 Lua 值
+     */
     fun createLuaValue(obj: Any?): LuaValue {
         if (obj == null) {
             return LuaValue.NIL
@@ -26,6 +35,13 @@ object LuaValueFactory {
         }
     }
 
+    /**
+     * 为 Java 对象创建一个自定义的 LuaUserdata，包含索引和新索引元方法
+     * 支持 getter 和 setter 的调用
+     *
+     * @param javaObject Java 对象
+     * @return 创建的 LuaUserdata
+     */
     private fun createCustomUserdata(javaObject: Any): LuaUserdata {
         val userdata = LuaUserdata(javaObject)
         val metatable = LuaTable()
@@ -45,18 +61,14 @@ object LuaValueFactory {
                 if (key == "cancelled" && currentJavaObject is Cancellable)
                     return valueOf(currentJavaObject.isCancelled)
 
-                // 尝试查找并调用对应的 getter 方法
-                val getterName =
-                    "get" + key.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-                val isGetterName =
-                    "is" + key.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+                // 尝试从缓存中获取 getter 方法
+                val methods = getMethods(currentJavaObject::class.java)
+                val getterName = "get" + key.replaceFirstChar { it.titlecase() }
+                val isGetterName = "is" + key.replaceFirstChar { it.titlecase() }
+
+                val getterMethod = methods[getterName] ?: methods[isGetterName]
 
                 try {
-                    val methods = currentJavaObject::class.java.methods
-                    val getterMethod = methods.find {
-                        (it.name == getterName || it.name == isGetterName) && it.parameterCount == 0
-                    }
-
                     if (getterMethod != null) {
                         // 找到 getter，调用并返回结果
                         val result = getterMethod.invoke(currentJavaObject)
@@ -100,30 +112,28 @@ object LuaValueFactory {
                     }
                 }
 
-                // 尝试查找并调用对应的 setter 方法
-                val setterName =
-                    "set" + key.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+                // 尝试从缓存中获取 setter 方法
+                val methods = getMethods(currentJavaObject::class.java)
+                val setterName = "set" + key.replaceFirstChar { it.titlecase() }
 
                 try {
-                    val methods = currentJavaObject::class.java.methods
-                    for (method in methods) {
-                        if (method.name == setterName && method.parameterCount == 1) {
-                            // 找到可能的 setter，尝试调用
-                            val paramType = method.parameterTypes[0]
-                            // 根据参数类型转换 Lua 值
-                            val javaValue = when {
-                                value.isboolean() && (paramType == Boolean::class.java || paramType == Boolean::class.javaPrimitiveType) -> value.toboolean()
-                                value.isint() && (paramType == Int::class.java || paramType == Int::class.javaPrimitiveType) -> value.toint()
-                                value.islong() && (paramType == Long::class.java || paramType == Long::class.javaPrimitiveType) -> value.tolong()
-                                value.isstring() && paramType == String::class.java -> value.tojstring()
-                                value.isuserdata() -> value.touserdata()
-                                else -> null
-                            }
+                    val setterMethod = methods[setterName]
+                    if (setterMethod != null) {
+                        // 找到 setter，尝试调用
+                        val paramType = setterMethod.parameterTypes[0]
+                        // 根据参数类型转换 Lua 值
+                        val javaValue = when {
+                            value.isboolean() && (paramType == Boolean::class.java || paramType == Boolean::class.javaPrimitiveType) -> value.toboolean()
+                            value.isint() && (paramType == Int::class.java || paramType == Int::class.javaPrimitiveType) -> value.toint()
+                            value.islong() && (paramType == Long::class.java || paramType == Long::class.javaPrimitiveType) -> value.tolong()
+                            value.isstring() && paramType == String::class.java -> value.tojstring()
+                            value.isuserdata() -> value.touserdata()
+                            else -> null
+                        }
 
-                            if (javaValue != null) {
-                                method.invoke(currentJavaObject, javaValue)
-                                return NIL
-                            }
+                        if (javaValue != null) {
+                            setterMethod.invoke(currentJavaObject, javaValue)
+                            return NIL
                         }
                     }
                 } catch (e: Exception) {
@@ -145,5 +155,18 @@ object LuaValueFactory {
 
         userdata.setmetatable(metatable)
         return userdata
+    }
+
+    /**
+     * 从缓存中获取类的所有方法，若缓存中没有，则通过反射获取并缓存
+     * 使用方法名作为缓存的 key，以便快速查找
+     *
+     * @param clazz 需要获取方法的类
+     * @return 方法名称到方法对象的映射
+     */
+    private fun getMethods(clazz: Class<*>): Map<String, Method> {
+        return methodCache.getOrPut(clazz) {
+            clazz.methods.associateBy { it.name }
+        }
     }
 }

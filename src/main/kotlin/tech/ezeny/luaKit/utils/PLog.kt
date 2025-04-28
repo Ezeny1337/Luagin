@@ -1,10 +1,14 @@
 package tech.ezeny.luaKit.utils
 
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import tech.ezeny.luaKit.i18n.I18n
 import java.util.logging.Level
 import java.util.logging.Logger
+import kotlin.getValue
 
-object PLog {
+object PLog : KoinComponent {
+    private val i18n: I18n by inject()
 
     private var loggerInstance: Logger? = null
 
@@ -25,33 +29,24 @@ object PLog {
 
         // 获取本地化前缀
         val prefix = when (level) {
-            Level.INFO -> I18n.get("log.info.prefix")
-            Level.WARNING -> I18n.get("log.warning.prefix")
-            Level.SEVERE -> I18n.get("log.severe.prefix")
+            Level.INFO -> i18n.get("log.info.prefix")
+            Level.WARNING -> i18n.get("log.warning.prefix")
+            Level.SEVERE -> i18n.get("log.severe.prefix")
             else -> ""
         }
 
         loggerInstance?.log(level, prefix + message, thrown)
     }
 
-    /**
-     * 记录信息级别日志
-     */
     fun info(key: String, vararg args: Any) {
-        log(Level.INFO, I18n.get(key, *args))
+        log(Level.INFO, i18n.get(key, *args))
     }
 
-    /**
-     * 记录警告级别日志
-     */
     fun warning(key: String, vararg args: Any) {
-        log(Level.WARNING, I18n.get(key, *args))
+        log(Level.WARNING, i18n.get(key, *args))
     }
 
-    /**
-     * 记录严重级别日志
-     */
     fun severe(key: String, vararg args: Any) {
-        log(Level.SEVERE, I18n.get(key, *args))
+        log(Level.SEVERE, i18n.get(key, *args))
     }
 }

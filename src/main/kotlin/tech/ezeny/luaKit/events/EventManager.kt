@@ -4,16 +4,13 @@ import org.bukkit.event.Event
 import org.bukkit.event.EventPriority
 import org.bukkit.event.HandlerList
 import org.bukkit.event.Listener
-import org.bukkit.plugin.java.JavaPlugin
 import org.luaj.vm2.LuaError
 import org.luaj.vm2.LuaFunction
+import tech.ezeny.luaKit.LuaKit
 import tech.ezeny.luaKit.utils.PLog
 import tech.ezeny.luaKit.lua.LuaValueFactory
 
-object EventManager : Listener {
-
-    private lateinit var plugin: JavaPlugin
-
+class EventManager(private val plugin: LuaKit) : Listener {
     // 存储 Lua 处理函数，按 Event 类分组
     private val luaEventHandlers = mutableMapOf<Class<out Event>, MutableList<Pair<String, LuaFunction>>>()
 
@@ -37,10 +34,6 @@ object EventManager : Listener {
 
     // 当前正在加载的脚本文件名
     private var currentScriptName: String = ""
-
-    fun initialize(plugin: JavaPlugin) {
-        this.plugin = plugin
-    }
 
     // 获取事件分类和包名映射
     fun getEventCategories(): Map<String, String> = eventCategories
@@ -90,7 +83,7 @@ object EventManager : Listener {
                 registeredListenerTypes.add(eventClass)
             }
 
-            PLog.info("log.info.register_lua_event_handler", eventName, currentScriptName)
+            PLog.info("log.info.register_event_handler", eventName, currentScriptName)
         } catch (e: ClassNotFoundException) {
             PLog.warning("log.warning.event_not_found", basePackage, eventName)
         } catch (e: Exception) {

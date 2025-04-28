@@ -1,6 +1,7 @@
 package tech.ezeny.luaKit.lua.api
 
-import org.bukkit.plugin.java.JavaPlugin
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.luaj.vm2.Globals
 import org.luaj.vm2.LuaTable
 import org.luaj.vm2.Varargs
@@ -8,13 +9,9 @@ import org.luaj.vm2.lib.VarArgFunction
 import tech.ezeny.luaKit.events.EventManager
 import tech.ezeny.luaKit.utils.PLog
 
-object EventsAPI : LuaAPIProvider {
-    private lateinit var plugin: JavaPlugin
+object EventsAPI : LuaAPIProvider, KoinComponent {
+    private val eventManager: EventManager by inject()
     private val apiNames = mutableListOf<String>()
-
-    override fun initialize(plugin: JavaPlugin) {
-        this.plugin = plugin
-    }
 
     override fun registerAPI(globals: Globals) {
         // 在 Lua 环境中创建全局 events table
@@ -22,7 +19,7 @@ object EventsAPI : LuaAPIProvider {
         globals.set("events", eventsTable)
 
         // 获取事件分类和对应的包名
-        val eventCategories = EventManager.getEventCategories()
+        val eventCategories = eventManager.getEventCategories()
 
         // 为不同事件类型创建子表和函数
         eventCategories.forEach { (categoryName, basePackage) ->
@@ -34,7 +31,7 @@ object EventsAPI : LuaAPIProvider {
                     val eventName = args.checkjstring(2)
                     val handler = args.checkfunction(3)
 
-                    EventManager.registerLuaEventHandler(basePackage, eventName, handler)
+                    eventManager.registerLuaEventHandler(basePackage, eventName, handler)
                     return NIL
                 }
             })
@@ -47,7 +44,7 @@ object EventsAPI : LuaAPIProvider {
                     }
 
                     val eventName = args.arg(2).tojstring()
-                    EventManager.unsetLuaEventHandler(basePackage, eventName)
+                    eventManager.unsetLuaEventHandler(basePackage, eventName)
                     return NIL
                 }
             })

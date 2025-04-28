@@ -1,23 +1,19 @@
 package tech.ezeny.luaKit.lua.api
 
-import org.bukkit.plugin.java.JavaPlugin
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import org.luaj.vm2.Globals
 import org.luaj.vm2.LuaTable
+import org.luaj.vm2.LuaValue
 import org.luaj.vm2.Varargs
 import org.luaj.vm2.lib.VarArgFunction
 import tech.ezeny.luaKit.config.YamlManager
+import tech.ezeny.luaKit.lua.APIRegister.apiNames
 import tech.ezeny.luaKit.utils.PLog
-import java.io.File
-import java.io.IOException
 
-object YamlAPI : LuaAPIProvider {
-    private lateinit var plugin: JavaPlugin
-    private val apiNames = mutableListOf<String>()
-    
-    override fun initialize(plugin: JavaPlugin) {
-        this.plugin = plugin
-    }
-    
+object YamlAPI : LuaAPIProvider, KoinComponent {
+    private val yamlManager: YamlManager by inject()
+
     override fun registerAPI(globals: Globals) {
         // 创建 yaml 表
         val yamlTable = LuaTable()
@@ -32,10 +28,8 @@ object YamlAPI : LuaAPIProvider {
 
                 val relativePath = args.checkjstring(1)
                 val key = args.checkjstring(2)
-                val absolutePath = getAbsolutePath(relativePath)
 
-                // 自动加载配置文件
-                val config = YamlManager.getConfigFromPath(absolutePath) ?: return NIL
+                val config = yamlManager.getConfig(relativePath) ?: return NIL
 
                 if (!config.contains(key)) {
                     return NIL
@@ -51,7 +45,13 @@ object YamlAPI : LuaAPIProvider {
                         val list = config.getList(key) ?: return NIL
                         val luaTable = LuaTable()
                         list.forEachIndexed { index, value ->
-                            luaTable.set(index + 1, valueOf(value.toString()))
+                            luaTable.set(index + 1, when (value) {
+                                is String -> valueOf(value)
+                                is Int -> valueOf(value)
+                                is Boolean -> valueOf(value)
+                                is Double -> valueOf(value)
+                                else -> valueOf(value.toString())
+                            })
                         }
                         luaTable
                     }
@@ -70,34 +70,37 @@ object YamlAPI : LuaAPIProvider {
                 val relativePath = args.checkjstring(1)
                 val key = args.checkjstring(2)
                 val value = args.arg(3)
-                val absolutePath = getAbsolutePath(relativePath)
 
-                // 自动加载或创建配置文件
-                val config = YamlManager.getConfigFromPath(absolutePath) ?: return valueOf(false)
+                val config = yamlManager.getConfig(relativePath) ?: return valueOf(false)
 
-                // 根据 Lua 值类型设置不同类型的配置值
-                when {
-                    value.isnil() -> config.set(key, null)
-                    value.isstring() -> config.set(key, value.tojstring())
-                    value.isint() -> config.set(key, value.toint())
-                    value.isnumber() -> config.set(key, value.todouble())
-                    value.isboolean() -> config.set(key, value.toboolean())
-                    value.istable() -> {
-                        // 将 Lua 表转换为列表
-                        val list = mutableListOf<String>()
-                        var i = 1
-                        while (true) {
-                            val item = value.get(i)
-                            if (item.isnil()) break
-                            list.add(item.tojstring())
-                            i++
+                // 递归处理 Lua 表
+                fun convertToYaml(value: LuaValue): Any {
+                    return when {
+                        value.isnil() -> ""
+                        value.isstring() -> value.tojstring()
+                        value.isint() -> value.toint()
+                        value.isnumber() -> value.todouble()
+                        value.isboolean() -> value.toboolean()
+                        value.istable() -> {
+                            val map = mutableMapOf<String, Any>()
+                            var i = 1
+                            while (true) {
+                                val item = value.get(i)
+                                if (item.isnil()) break
+                                map["$i"] = convertToYaml(item)
+                                i++
+                            }
+                            map
                         }
-                        config.set(key, list)
+                        else -> value.tojstring()
                     }
                 }
 
+                // 转换 Lua 值为 YAML 支持的类型
+                config.set(key, convertToYaml(value))
+
                 // 自动保存配置文件
-                val success = YamlManager.saveConfigToPath(absolutePath)
+                val success = yamlManager.saveConfig(relativePath)
                 return valueOf(success)
             }
         })
@@ -108,35 +111,6 @@ object YamlAPI : LuaAPIProvider {
         }
         
         PLog.info("log.info.yaml_api_set")
-    }
-    
-    /**
-     * 获取绝对路径
-     * 将相对路径转换为基于插件目录的绝对路径
-     */
-    private fun getAbsolutePath(relativePath: String): String {
-        // 如果已经是绝对路径并且在插件目录内，直接返回
-        val file = File(relativePath)
-        if (file.isAbsolute && isPathSafe(file)) {
-            return relativePath
-        }
-        
-        // 否则，将其视为相对于插件目录的路径
-        return File(plugin.dataFolder, relativePath).absolutePath
-    }
-
-    /**
-     * 安全检查：确保路径在插件目录内
-     * 仅用于验证绝对路径
-     */
-    private fun isPathSafe(file: File): Boolean {
-        try {
-            val pluginDirPath = plugin.dataFolder.canonicalPath
-            val filePath = file.canonicalPath
-            return filePath.startsWith(pluginDirPath)
-        } catch (e: IOException) {
-            return false
-        }
     }
     
     override fun getAPINames(): List<String> = apiNames

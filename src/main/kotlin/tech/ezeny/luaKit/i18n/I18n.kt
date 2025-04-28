@@ -1,86 +1,92 @@
 package tech.ezeny.luaKit.i18n
 
 import org.bukkit.configuration.file.YamlConfiguration
-import org.bukkit.plugin.java.JavaPlugin
 import tech.ezeny.luaKit.config.YamlManager
-import tech.ezeny.luaKit.config.YamlManager.langFolder
 import tech.ezeny.luaKit.utils.PLog
-import java.io.File
 import java.text.MessageFormat
 
-object I18n {
-    private lateinit var plugin: JavaPlugin
-
+class I18n(private val yamlManager: YamlManager) {
     // 当前语言
     private var currentLocale = "en_US"
-
     // 语言翻译配置
     private var langConfig: YamlConfiguration? = null
-
     // 默认语言翻译配置
     private var defaultLangConfig: YamlConfiguration? = null
-
     // 语言设置配置
     private var languageSettingsConfig: YamlConfiguration? = null
 
-    fun initialize(plugin: JavaPlugin) {
-        this.plugin = plugin
+    private val langDir = "lang"
 
+    init {
         // 加载 language.yml
-        val languageConfigFile = File(langFolder, "language.yml")
-        if (languageConfigFile.exists()) {
-            languageSettingsConfig = YamlManager.loadConfig("language", langFolder)
-            currentLocale = languageSettingsConfig?.getString("Language", "en_US") ?: "en_US"
+        val languageSettingsPath = "$langDir/language.yml"
+        languageSettingsConfig = yamlManager.getConfig(languageSettingsPath)
+        currentLocale = if (languageSettingsConfig != null) {
+            languageSettingsConfig?.getString("Language", "en_US") ?: "en_US"
         } else {
-            currentLocale = "en_US"
+            "en_US"
         }
 
         // 加载语言翻译文件
         loadLanguage(currentLocale)
-
-        PLog.info("i18n.initialized", currentLocale)
     }
 
     /**
-     * 加载指定语言的翻译文件
-     * 如果不是英语，则加载英语作为回退选项
-     * @param locale 语言代码 (如 "en_US", "zh_CN")
-     */
-    private fun loadLanguage(locale: String) {
-        langConfig = YamlManager.loadConfig(locale, langFolder)
-
-        if (locale != "en_US") {
-            defaultLangConfig = YamlManager.loadConfig("en_US", langFolder)
-        }
-
-        if (langConfig == null) {
-            PLog.warning("i18n.language_not_found", locale)
-            currentLocale = "en_US"
-            langConfig = YamlManager.loadConfig("en_US", langFolder)
-        }
-    }
-
-    /**
-     * 获取本地化文本
-     * @param key 文本键
+     * 获取本地化字符串
+     *
+     * @param key 语言键
      * @param args 格式化参数
-     * @return 本地化后的文本
+     * @return 本地化后的字符串，如果找不到则返回键本身
      */
     fun get(key: String, vararg args: Any): String {
-        var message = langConfig?.getString(key)
+        var value = langConfig?.getString(key)
 
-        if (message == null && defaultLangConfig != null) {
-            message = defaultLangConfig?.getString(key)
+        // 如果当前语言文件没有，尝试从默认语言文件获取
+        if (value == null && defaultLangConfig != null) {
+            value = defaultLangConfig?.getString(key)
         }
 
-        if (message == null) {
+        // 如果仍然找不到，返回键本身
+        if (value == null) {
+            PLog.warning("i18n.missing_key", key, currentLocale)
             return key
         }
 
-        return if (args.isNotEmpty()) {
-            MessageFormat.format(message, *args)
+        // 格式化字符串
+        return try {
+            if (args.isNotEmpty()) {
+                MessageFormat.format(value, *args)
+            } else {
+                value
+            }
+        } catch (e: IllegalArgumentException) {
+            PLog.warning("i18n.format_error", key, e.message ?: "Unknown error")
+            value
+        }
+    }
+
+    /**
+     * 加载指定的语言文件
+     *
+     * @param locale 语言代码 (例如 "en_US")
+     */
+    private fun loadLanguage(locale: String) {
+        val langPath = "$langDir/$locale.yml"
+        langConfig = yamlManager.getConfig(langPath)
+
+        if (locale != "en_US") {
+            val defaultLangPath = "$langDir/en_US.yml"
+            defaultLangConfig = yamlManager.getConfig(defaultLangPath)
         } else {
-            message
+            defaultLangConfig = null
+        }
+
+        // 如果指定的语言文件加载失败，加载默认语言
+        if (langConfig == null) {
+            currentLocale = "en_US"
+            val defaultLangPath = "$langDir/en_US.yml"
+            langConfig = yamlManager.getConfig(defaultLangPath)
+            defaultLangConfig = null
         }
     }
 }

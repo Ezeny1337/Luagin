@@ -1,7 +1,14 @@
-package tech.ezeny.luaKit.lua.api
+package tech.ezeny.luaKit.lua
 
 import org.bukkit.plugin.java.JavaPlugin
 import org.luaj.vm2.Globals
+import tech.ezeny.luaKit.lua.api.ActionBarAPI
+import tech.ezeny.luaKit.lua.api.ChatAPI
+import tech.ezeny.luaKit.lua.api.EventsAPI
+import tech.ezeny.luaKit.lua.api.FilesAPI
+import tech.ezeny.luaKit.lua.api.TitleAPI
+import tech.ezeny.luaKit.lua.api.UtilsAPI
+import tech.ezeny.luaKit.lua.api.YamlAPI
 
 object APIRegister {
     private lateinit var plugin: JavaPlugin
