@@ -1,0 +1,184 @@
+package tech.ezeny.luaKit.i18n
+
+import org.bukkit.configuration.file.YamlConfiguration
+import java.io.File
+
+object LanguageManager {
+
+    /**
+     * 创建默认语言文件
+     * @param configFolder 配置文件夹
+     */
+    fun createDefaultLanguageFiles(configFolder: File) {
+
+        val langFile = File(configFolder, "language.yml")
+        if (!langFile.exists()) {
+            val langConfig = YamlConfiguration()
+            langConfig.set("Language", "en_US")
+            langConfig.save(langFile)
+        }
+
+        // 创建英文语言文件
+        val enFile = File(configFolder, "en_US.yml")
+        if (!enFile.exists()) {
+            val enConfig = YamlConfiguration()
+
+            // 插件信息
+            enConfig.set("plugin.name", "LuaKit")
+            enConfig.set("plugin.version", "1.0.0")
+
+            // 主日志消息
+            enConfig.set("log.info.prefix", "[INFO] ")
+            enConfig.set("log.warning.prefix", "[WARNING] ")
+            enConfig.set("log.severe.prefix", "[SEVERE] ")
+            enConfig.set("log.info.loading", "Loading...")
+            enConfig.set("log.info.loading_completed", "Loading completed")
+            enConfig.set("log.info.unloading", "Unloading...")
+            enConfig.set("log.info.unloading_completed", "Unloading completed")
+            enConfig.set("log.info.clear_handlers_for_script", "All event handlers for script {0} have been removed")
+            enConfig.set("log.info.register_event_handler", "Registered event handler for {0} (from script {1})")
+            enConfig.set("log.warning.event_not_found", "Event class {0}.{1} not found")
+            enConfig.set("log.warning.register_event_handler_error", "Error registering event handler: {0}")
+            enConfig.set("log.warning.unset_event_handler_error", "Error unregistering event handler: {0}")
+            enConfig.set("log.info.register_bukkit_listener", "Registered Bukkit listener for {0}")
+            enConfig.set("log.warning.handle_event_error", "Error executing Lua event handler (from script {0}): {1}")
+            enConfig.set("log.info.clear_handlers", "All Lua event handlers removed and Bukkit listeners unregistered")
+            enConfig.set("log.info.set_environment", "Lua main environment has been set")
+            enConfig.set("log.warning.scripts_not_found", "No Lua scripts found in {0}")
+            enConfig.set("log.info.lua_loading_completed", "All Lua scripts loaded successfully, {0} scripts in total")
+            enConfig.set("log.warning.script_not_found", "Lua script not found: {0}")
+            enConfig.set("log.warning.invalid_color", "Invalid color code: {0}")
+            enConfig.set("log.warning.getter_error", "Error finding or invoking getter {0} or {1}: {2}")
+            enConfig.set("log.warning.set_property_error", "Error setting property {0}: {1}")
+            enConfig.set("log.warning.set_property_error_not_found", "Cannot set property {0}: suitable setter method not found")
+            enConfig.set("log.warning.lua_dir_not_found", "Script directory does not exist or is not a directory: {0}")
+            enConfig.set("log.warning.lua_not_found", "Script file not found: {0}")
+            enConfig.set("log.info.loading_lua_succeeded", "Lua loaded successfully: {0}")
+            enConfig.set("log.warning.loading_lua_error", "Error loading {0}: {1}")
+            enConfig.set("log.info.copy_shared_api", "Shared API: {0} copied to script environment")
+            enConfig.set("log.info.copy_shared_api_error", "Shared API: {0} is nil in the main environment")
+            enConfig.set("log.info.events_api_set", "Events API has been set")
+            enConfig.set("log.info.chat_api_set", "Chat API has been set")
+            enConfig.set("log.info.title_api_set", "Title API has been set")
+            enConfig.set("log.info.actionbar_api_set", "ActionBar API has been set")
+            enConfig.set("log.info.utils_api_set", "Utils API has been set")
+            enConfig.set("log.info.files_api_set", "Files API has been set")
+            enConfig.set("log.info.yaml_api_set", "YAML API has been set")
+            enConfig.set("log.warning.player_not_found", "Player not found: {0}")
+            enConfig.set("log.warning.command_exec_error", "Error executing command {0}: {1}")
+            enConfig.set("log.warning.execute_after_error", "Error executing delayed callback: {0}")
+            enConfig.set("log.warning.mkdirs_error", "Failed to create directory {0}: {1}")
+            enConfig.set("log.warning.create_file_error", "Failed to create file {0}: {1}")
+            enConfig.set("log.warning.dir_not_found", "Directory not found: {0}")
+
+            // 配置文件消息
+            enConfig.set("config.folder.created", "Created config folder: {0}")
+            enConfig.set("config.file.not_found", "Config file not found: {0}")
+            enConfig.set("config.file.load_error", "Error loading config file {0}: {1}")
+            enConfig.set("config.file.save_error", "Error saving config file {0}: {1}")
+            enConfig.set("config.not_found", "Config not found: {0}")
+
+            // 命令消息
+            enConfig.set("command.help.title", "=== LuaKit Command Help ===")
+            enConfig.set("command.help.reload_all", "/luakit reload - Reload all Lua scripts")
+            enConfig.set("command.help.reload_specific", "/luakit reload <script> - Reload specific Lua script")
+            enConfig.set("command.help.help", "/luakit help - Show this help message")
+            enConfig.set("command.unknown", "Unknown command, use /luakit help to see available commands")
+            enConfig.set("command.reload.script.loading", "Reloading script: {0}")
+            enConfig.set("command.reload.script.success", "Script {0} has been successfully reloaded")
+            enConfig.set(
+                "command.reload.script.failure",
+                "Unable to reload script {0}. Please check if the script exists"
+            )
+            enConfig.set("command.reload.all.loading", "Reloading all Lua scripts...")
+            enConfig.set("command.reload.all.success", "Successfully reloaded {0} scripts")
+
+            // I18n 消息
+            enConfig.set("i18n.initialized", "I18n initialized, current language: {0}")
+            enConfig.set("i18n.language_not_found", "Language file not found: {0}.yml, will use default language en_US")
+            enConfig.set("i18n.language_changed", "Language changed to: {0}")
+
+            enConfig.save(enFile)
+        }
+
+        // 创建中文语言文件
+        val zhFile = File(configFolder, "zh_CN.yml")
+        if (!zhFile.exists()) {
+            val zhConfig = YamlConfiguration()
+
+            // 插件信息
+            zhConfig.set("plugin.name", "LuaKit")
+            zhConfig.set("plugin.version", "1.0.0")
+
+            // 主日志消息
+            zhConfig.set("log.info.prefix", "[信息] ")
+            zhConfig.set("log.warning.prefix", "[警告] ")
+            zhConfig.set("log.severe.prefix", "[严重] ")
+            zhConfig.set("log.info.loading", "加载中...")
+            zhConfig.set("log.info.loading_completed", "加载完成")
+            zhConfig.set("log.info.unloading", "卸载中...")
+            zhConfig.set("log.info.unloading_completed", "卸载完成")
+            zhConfig.set("log.info.clear_handlers_for_script","已移除脚本 {0} 的所有事件处理器")
+            zhConfig.set("log.info.register_event_handler","已为 {0} 注册事件处理器 (来自脚本 {1})")
+            zhConfig.set("log.warning.event_not_found","找不到事件类 {0}.{1}")
+            zhConfig.set("log.warning.register_event_handler_error","注册事件处理器时出错: {0}")
+            zhConfig.set("log.warning.unset_event_handler_error","取消注册事件处理器时出错: {0}")
+            zhConfig.set("log.info.register_bukkit_listener","已为 {0} 注册 Bukkit 监听器")
+            zhConfig.set("log.warning.handle_event_error","执行 Lua 事件处理器时出错 (来自脚本 {0}): {1}")
+            zhConfig.set("log.info.clear_handlers","已移除所有 Lua 事件处理器并取消注册 Bukkit 监听器")
+            zhConfig.set("log.info.set_environment","Lua 主环境已设置")
+            zhConfig.set("log.warning.scripts_not_found","在 {0} 未找到任何 Lua 脚本")
+            zhConfig.set("log.info.lua_loading_completed","所有 Lua 脚本加载完成, 共加载 {0} 个脚本")
+            zhConfig.set("log.warning.script_not_found","Lua 脚本不存在: {0}")
+            zhConfig.set("log.warning.invalid_color","无效的颜色代码: {0}")
+            zhConfig.set("log.warning.getter_error","查找或调用 getter {0} 或 {1} 时出错: {2}")
+            zhConfig.set("log.warning.set_property_error","设置属性 {0} 时出错: {1}")
+            zhConfig.set("log.warning.set_property_error_not_found","无法设置属性 {0}: 找不到合适的 setter 方法")
+            zhConfig.set("log.warning.lua_dir_not_found","脚本目录不存在或不是一个目录: {0}")
+            zhConfig.set("log.warning.lua_not_found","脚本文件不存在: {0}")
+            zhConfig.set("log.info.loading_lua_succeeded","成功加载 Lua: {0}")
+            zhConfig.set("log.warning.loading_lua_error","加载 {0} 时出错: {1}")
+            zhConfig.set("log.info.copy_shared_api","已复制共享 API: {0} 到脚本环境")
+            zhConfig.set("log.info.copy_shared_api_error","共享 API: {0} 在主环境为 nil")
+            zhConfig.set("log.info.events_api_set","Events API 已设置")
+            zhConfig.set("log.info.chat_api_set","Chat API 已设置")
+            zhConfig.set("log.info.title_api_set","Title API 已设置")
+            zhConfig.set("log.info.actionbar_api_set","ActionBar API 已设置")
+            zhConfig.set("log.info.utils_api_set","Utils API 已设置")
+            zhConfig.set("log.info.files_api_set","Files API 已设置")
+            zhConfig.set("log.info.yaml_api_set","YAML API 已设置")
+            zhConfig.set("log.warning.player_not_found","找不到玩家: {0}")
+            zhConfig.set("log.warning.command_exec_error","执行命令 {0} 时出错: {1}")
+            zhConfig.set("log.warning.execute_after_error","执行延迟回调时出错: {0}")
+            zhConfig.set("log.warning.mkdirs_error","创建目录 {0} 失败: {1}")
+            zhConfig.set("log.warning.create_file_error","创建文件 {0} 失败: {1}")
+            zhConfig.set("log.warning.dir_not_found","目录不存在: {0}")
+
+            // 配置文件消息
+            zhConfig.set("config.folder.created", "创建了配置文件夹: {0}")
+            zhConfig.set("config.file.not_found", "配置文件不存在: {0}")
+            zhConfig.set("config.file.load_error", "加载配置文件 {0} 时出错: {1}")
+            zhConfig.set("config.file.save_error", "保存配置文件 {0} 时出错: {1}")
+            zhConfig.set("config.not_found", "找不到要保存的配置: {0}")
+
+            // 命令消息
+            zhConfig.set("command.help.title", "=== LuaKit 命令帮助 ===")
+            zhConfig.set("command.help.reload_all", "/luakit reload - 重新加载所有 Lua 脚本")
+            zhConfig.set("command.help.reload_specific", "/luakit reload <脚本名> - 重新加载指定 Lua 脚本")
+            zhConfig.set("command.help.help", "/luakit help - 显示此帮助信息")
+            zhConfig.set("command.unknown", "未知命令, 使用 /luakit help 查看帮助")
+            zhConfig.set("command.reload.script.loading", "正在重新加载脚本: {0}")
+            zhConfig.set("command.reload.script.success", "脚本 {0} 已成功重新加载")
+            zhConfig.set("command.reload.script.failure", "无法重新加载脚本 {0}, 请检查脚本是否存在")
+            zhConfig.set("command.reload.all.loading", "正在重新加载所有 Lua 脚本...")
+            zhConfig.set("command.reload.all.success", "成功重新加载了 {0} 个脚本")
+
+            // I18n 消息
+            zhConfig.set("i18n.initialized", "I18n 已初始化，当前语言: {0}")
+            zhConfig.set("i18n.language_not_found", "找不到语言文件: {0}.yml，将使用默认语言 en_US")
+            zhConfig.set("i18n.language_changed", "已切换语言: {0}")
+
+            zhConfig.save(zhFile)
+        }
+    }
+}

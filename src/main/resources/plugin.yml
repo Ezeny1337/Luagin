@@ -1,0 +1,17 @@
+name: LuaKit
+version: '1.0-SNAPSHOT'
+main: tech.ezeny.luaKit.LuaKit
+api-version: '1.21'
+authors: [Ezeny]
+description: Run Minecraft plugins using Lua scripting
+
+commands:
+  luakit:
+    description: LuaKit 插件命令
+    usage: /luakit <reload|help> [脚本名]
+    permission: luakit.admin
+    aliases: [lk]
+permissions:
+  luakit.admin:
+    description: 允许使用 LuaKit 管理命令
+    default: op
