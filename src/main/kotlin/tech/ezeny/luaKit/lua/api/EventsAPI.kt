@@ -36,19 +36,6 @@ object EventsAPI : LuaAPIProvider, KoinComponent {
                 }
             })
 
-            // 取消事件处理器的方法
-            categoryTable.set("unset", object : VarArgFunction() {
-                override fun invoke(args: Varargs): Varargs {
-                    if (args.narg() != 2 || !args.arg(2).isstring()) {
-                        return NIL
-                    }
-
-                    val eventName = args.arg(2).tojstring()
-                    eventManager.unsetLuaEventHandler(basePackage, eventName)
-                    return NIL
-                }
-            })
-
             eventsTable.set(categoryName, categoryTable)
         }
 

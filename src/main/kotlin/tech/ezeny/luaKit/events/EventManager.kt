@@ -91,28 +91,6 @@ class EventManager(private val plugin: LuaKit) : Listener {
         }
     }
 
-    // 取消注册事件处理器方法
-    fun unsetLuaEventHandler(basePackage: String, eventName: String) {
-        try {
-            val eventClassName = "$basePackage.$eventName"
-            val eventClass = Class.forName(eventClassName) as Class<out Event>
-
-            // 移除当前脚本的处理器
-            luaEventHandlers[eventClass]?.removeIf { it.first == currentScriptName }
-
-            // 如果没有处理器了，移除整个事件类型
-            if (luaEventHandlers[eventClass]?.isEmpty() == true) {
-                luaEventHandlers.remove(eventClass)
-                registeredListenerTypes.remove(eventClass)
-            }
-
-        } catch (e: ClassNotFoundException) {
-            PLog.warning("log.warning.event_not_found", basePackage, eventName)
-        } catch (e: Exception) {
-            PLog.warning("log.warning.unset_event_handler_error", e.message ?: "Unknown error")
-        }
-    }
-
     private fun registerBukkitListener(eventClass: Class<out Event>) {
         plugin.server.pluginManager.registerEvent(
             eventClass,
