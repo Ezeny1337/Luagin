@@ -48,11 +48,6 @@ class ScriptManager(
         return loadAllScripts()
     }
 
-    fun loadScriptByName(scriptName: String): Boolean {
-        val scriptFile = File(scriptsFolder, scriptName)
-        return loadScript(scriptFile)
-    }
-
     private fun loadScript(scriptFile: File): Boolean {
         if (!scriptFile.exists() || !scriptFile.isFile || scriptFile.extension != "lua") {
             PLog.warning("log.warning.lua_not_found", scriptFile.canonicalPath)

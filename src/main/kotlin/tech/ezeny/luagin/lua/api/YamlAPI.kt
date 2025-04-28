@@ -8,11 +8,11 @@ import org.luaj.vm2.LuaValue
 import org.luaj.vm2.Varargs
 import org.luaj.vm2.lib.VarArgFunction
 import tech.ezeny.luagin.config.YamlManager
-import tech.ezeny.luagin.lua.APIRegister.apiNames
 import tech.ezeny.luagin.utils.PLog
 
 object YamlAPI : LuaAPIProvider, KoinComponent {
     private val yamlManager: YamlManager by inject()
+    private val apiNames = mutableListOf<String>()
 
     override fun registerAPI(globals: Globals) {
         // 创建 yaml 表

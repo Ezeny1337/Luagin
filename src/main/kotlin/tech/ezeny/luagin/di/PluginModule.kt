@@ -6,6 +6,7 @@ import tech.ezeny.luagin.commands.CommandHandler
 import tech.ezeny.luagin.config.YamlManager
 import tech.ezeny.luagin.events.EventManager
 import tech.ezeny.luagin.i18n.I18n
+import tech.ezeny.luagin.lua.APIRegister
 import tech.ezeny.luagin.lua.LuaEnvManager
 import tech.ezeny.luagin.lua.ScriptManager
 
@@ -15,7 +16,8 @@ val pluginModules = module {
     single { YamlManager(get()) }
     single { I18n(get()) }
     single { EventManager(get()) }
-    single { LuaEnvManager(get()) }
+    single { APIRegister(get()) }
+    single { LuaEnvManager(get(), get()) }
     single { ScriptManager(get(), get()) }
-    single { CommandHandler(get(),get()) }
+    single { CommandHandler(get(), get()) }
 }

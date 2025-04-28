@@ -9,6 +9,7 @@ import tech.ezeny.luagin.config.YamlManager
 import tech.ezeny.luagin.di.pluginModules
 import tech.ezeny.luagin.events.EventManager
 import tech.ezeny.luagin.i18n.I18n
+import tech.ezeny.luagin.lua.APIRegister
 import tech.ezeny.luagin.lua.LuaEnvManager
 import tech.ezeny.luagin.lua.ScriptManager
 import tech.ezeny.luagin.utils.PLog
@@ -28,6 +29,7 @@ class Luagin : JavaPlugin() {
         getKoin().get<YamlManager>()
         getKoin().get<I18n>()
         getKoin().get<EventManager>()
+        getKoin().get<APIRegister>()
         getKoin().get<LuaEnvManager>()
         getKoin().get<ScriptManager>()
 

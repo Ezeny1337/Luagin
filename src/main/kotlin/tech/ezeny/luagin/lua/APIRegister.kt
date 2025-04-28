@@ -1,7 +1,7 @@
 package tech.ezeny.luagin.lua
 
-import org.bukkit.plugin.java.JavaPlugin
 import org.luaj.vm2.Globals
+import tech.ezeny.luagin.Luagin
 import tech.ezeny.luagin.lua.api.ActionBarAPI
 import tech.ezeny.luagin.lua.api.ChatAPI
 import tech.ezeny.luagin.lua.api.EventsAPI
@@ -10,8 +10,9 @@ import tech.ezeny.luagin.lua.api.TitleAPI
 import tech.ezeny.luagin.lua.api.UtilsAPI
 import tech.ezeny.luagin.lua.api.YamlAPI
 
-object APIRegister {
-    private lateinit var plugin: JavaPlugin
+class APIRegister(private val plugin: Luagin) {
+    // API 名称列表，用于共享
+    val apiNames = mutableListOf<String>()
 
     // API提供者列表
     private val apiProviders = listOf(
@@ -24,15 +25,7 @@ object APIRegister {
         YamlAPI
     )
 
-    // API 名称列表，用于共享
-    val apiNames = mutableListOf<String>()
-
-    /**
-     * 初始化 API 系统
-     */
-    fun initialize(plugin: JavaPlugin) {
-        this.plugin = plugin
-
+    init {
         // 初始化所有API提供者
         apiProviders.forEach { it.initialize(plugin) }
     }

@@ -6,7 +6,7 @@ import tech.ezeny.luagin.Luagin
 import tech.ezeny.luagin.utils.PLog
 import java.io.File
 
-class LuaEnvManager(plugin: Luagin) {
+class LuaEnvManager(plugin: Luagin,private val apiRegister: APIRegister) {
 
     lateinit var globals: Globals
         private set
@@ -15,13 +15,10 @@ class LuaEnvManager(plugin: Luagin) {
     /**
      * 获取已注册的 API 列表
      */
-    fun getSharedAPIs(): List<String> = APIRegister.apiNames
+    fun getSharedAPIs(): List<String> = apiRegister.apiNames
 
     init {
         ensureScriptsFolderExists()
-
-        // 初始化 API 系统
-        APIRegister.initialize(plugin)
 
         setEnvironment()
     }
@@ -37,7 +34,7 @@ class LuaEnvManager(plugin: Luagin) {
      * 注册所有 API
      */
     private fun setupBasicEnvironment() {
-        APIRegister.registerAllAPIs(globals)
+        apiRegister.registerAllAPIs(globals)
     }
 
     private fun ensureScriptsFolderExists() {
