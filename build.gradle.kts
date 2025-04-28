@@ -46,7 +46,7 @@ tasks {
     shadowJar {
         archiveClassifier.set("")
         minimize()
-        relocate("org.luaj", "tech.ezeny.luakit.shadow.luaj")
+        relocate("org.luaj", "tech.ezeny.luagin.shadow.luaj")
     }
 
     runServer {

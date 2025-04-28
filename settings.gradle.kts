@@ -1,1 +1,1 @@
-rootProject.name = "LuaKit"
+rootProject.name = "Luagin"

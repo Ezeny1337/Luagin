@@ -1,17 +1,17 @@
-name: LuaKit
+name: Luagin
 version: ${version}
-main: tech.ezeny.luakit.LuaKit
+main: tech.ezeny.luagin.Luagin
 api-version: 1.21
 authors: [Ezeny]
 description: Run Minecraft plugins using Lua scripting
 
 commands:
-  luakit:
-    description: LuaKit 插件命令
-    usage: /luakit <reload|help> [脚本名]
-    permission: luakit.admin
+  luagin:
+    description: Luagin 插件命令
+    usage: /luagin <reload|help> [脚本名]
+    permission: luagin.admin
     aliases: [lk]
 permissions:
-  luakit.admin:
-    description: 允许使用 LuaKit 管理命令
+  luagin.admin:
+    description: 允许使用 Luagin 管理命令
     default: op
