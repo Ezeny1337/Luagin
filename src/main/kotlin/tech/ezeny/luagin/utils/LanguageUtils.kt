@@ -73,6 +73,8 @@ object LanguageUtils {
             enConfig.set("log.warning.dir_not_found", "Directory not found: {0}")
             enConfig.set("log.warning.function_not_found","{0} script cannot find the function: {1}")
             enConfig.set("log.warning.function_call_error","Error in {0} script`s {1} function call: {2}")
+            enConfig.set("log.warning.read_file_error","Failed to read file {0}: {1}")
+            enConfig.set("log.warning.write_file_error","Failed to write file {0}: {1}")
 
             // 配置文件消息
             enConfig.set("config.loaded", "Loaded config: {0}")
@@ -154,6 +156,8 @@ object LanguageUtils {
             zhConfig.set("log.warning.dir_not_found","目录不存在: {0}")
             zhConfig.set("log.warning.function_not_found","{0} 脚本找不到函数: {1}")
             zhConfig.set("log.warning.function_call_error","{0} 脚本的 {1} 函数调用出错: {2}")
+            zhConfig.set("log.warning.read_file_error","读取文件 {0} 时出错: {1}")
+            zhConfig.set("log.warning.write_file_error","写入文件 {0} 时出错: {1}")
 
             // 配置文件消息
             zhConfig.set("config.loaded", "加载了配置: {0}")

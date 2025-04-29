@@ -23,7 +23,7 @@ object MessageUtils {
      * @param stay 停留时间（tick）
      * @param fadeOut 淡出时间（tick）
      */
-    fun sendTitle(player: Player, title: String, subtitle: String, fadeIn: Int = 10, stay: Int = 70, fadeOut: Int = 20) {
+    fun sendTitle(player: Player, title: String, subtitle: String, fadeIn: Int = 15, stay: Int = 70, fadeOut: Int = 15) {
         val formattedTitle = ColorUtils.formatString(title)
         val formattedSubtitle = ColorUtils.formatString(subtitle)
         player.sendTitle(formattedTitle, formattedSubtitle, fadeIn, stay, fadeOut)

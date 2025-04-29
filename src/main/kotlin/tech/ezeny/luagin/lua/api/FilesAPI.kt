@@ -22,23 +22,62 @@ object FilesAPI : LuaAPIProvider {
         val filesTable = LuaTable()
         globals.set("files", filesTable)
 
-        // 检查目录是否存在
-        filesTable.set("dirExists", object : VarArgFunction() {
+        // 读取文件内容
+        filesTable.set("read", object : VarArgFunction() {
             override fun invoke(args: Varargs): Varargs {
                 if (args.narg() < 1 || !args.arg(1).isstring()) {
-                    return FALSE
+                    return NIL
                 }
 
                 val relativePath = args.checkjstring(1)
                 val absolutePath = getAbsolutePath(relativePath)
-                val dir = File(absolutePath)
+                val file = File(absolutePath)
 
-                return valueOf(dir.exists() && dir.isDirectory)
+                if (!file.exists() || !file.isFile) {
+                    return NIL
+                }
+
+                return try {
+                    val content = file.readText(Charsets.UTF_8)
+                    valueOf(content)
+                } catch (e: IOException) {
+                    PLog.warning("log.warning.read_file_error", relativePath, e.message ?: "Unknown error")
+                    NIL
+                }
+            }
+        })
+
+        // 写入文件内容
+        filesTable.set("write", object : VarArgFunction() {
+            override fun invoke(args: Varargs): Varargs {
+                if (args.narg() < 2 || !args.arg(1).isstring() || !args.arg(2).isstring()) {
+                    return FALSE
+                }
+
+                val relativePath = args.checkjstring(1)
+                val contents = args.checkjstring(2)
+                val isBinary = if (args.narg() > 2) args.checkboolean(3) else false
+
+                val absolutePath = getAbsolutePath(relativePath)
+                val file = File(absolutePath)
+
+                return try {
+                    // 二进制或文本写入
+                    if (isBinary) {
+                        file.writeBytes(contents.toByteArray())
+                    } else {
+                        file.writeText(contents, Charsets.UTF_8)
+                    }
+                    TRUE
+                } catch (e: IOException) {
+                    PLog.warning("log.warning.write_file_error", relativePath, e.message ?: "Unknown error")
+                    FALSE
+                }
             }
         })
 
         // 创建目录
-        filesTable.set("createDir", object : VarArgFunction() {
+        filesTable.set("create_folder", object : VarArgFunction() {
             override fun invoke(args: Varargs): Varargs {
                 if (args.narg() < 1 || !args.arg(1).isstring()) {
                     return FALSE
@@ -48,21 +87,17 @@ object FilesAPI : LuaAPIProvider {
                 val absolutePath = getAbsolutePath(relativePath)
                 val dir = File(absolutePath)
 
-                if (dir.exists()) {
-                    return TRUE
-                }
-
                 return try {
                     valueOf(dir.mkdirs())
                 } catch (e: IOException) {
-                    PLog.severe("log.warning.mkdirs_error", relativePath, e.message ?: "Unknown error")
+                    PLog.warning("log.warning.mkdirs_error", relativePath, e.message ?: "Unknown error")
                     FALSE
                 }
             }
         })
 
         // 创建文件
-        filesTable.set("createFile", object : VarArgFunction() {
+        filesTable.set("create_file", object : VarArgFunction() {
             override fun invoke(args: Varargs): Varargs {
                 if (args.narg() < 1 || !args.arg(1).isstring()) {
                     return FALSE
@@ -79,14 +114,14 @@ object FilesAPI : LuaAPIProvider {
                 return try {
                     valueOf(file.createNewFile())
                 } catch (e: IOException) {
-                    PLog.severe("log.warning.create_file_error", relativePath, e.message ?: "Unknown error")
+                    PLog.warning("log.warning.create_file_error", relativePath, e.message ?: "Unknown error")
                     FALSE
                 }
             }
         })
 
-        // 检查文件是否存在
-        filesTable.set("fileExists", object : VarArgFunction() {
+        // 检查文件或文件夹是否存在
+        filesTable.set("exists", object : VarArgFunction() {
             override fun invoke(args: Varargs): Varargs {
                 if (args.narg() < 1 || !args.arg(1).isstring()) {
                     return FALSE
@@ -96,12 +131,12 @@ object FilesAPI : LuaAPIProvider {
                 val absolutePath = getAbsolutePath(relativePath)
                 val file = File(absolutePath)
 
-                return valueOf(file.exists() && file.isFile)
+                return valueOf(file.exists())
             }
         })
 
         // 列出目录内容
-        filesTable.set("listDir", object : VarArgFunction() {
+        filesTable.set("list_dir", object : VarArgFunction() {
             override fun invoke(args: Varargs): Varargs {
                 if (args.narg() < 1 || !args.arg(1).isstring()) {
                     return NIL
