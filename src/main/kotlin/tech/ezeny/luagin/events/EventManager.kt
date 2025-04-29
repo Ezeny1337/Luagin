@@ -17,6 +17,9 @@ class EventManager(private val plugin: Luagin) : Listener {
     // 跟踪已经为哪些 Event 类注册了 Bukkit 监听器
     private val registeredListenerTypes = mutableSetOf<Class<out Event>>()
 
+    // 当前正在加载的脚本文件名
+    private var currentScriptName: String = ""
+
     // 事件分类和对应的 Bukkit 包名
     private val eventCategories = mapOf(
         "block" to "org.bukkit.event.block",
@@ -32,16 +35,18 @@ class EventManager(private val plugin: Luagin) : Listener {
         "world" to "org.bukkit.event.world"
     )
 
-    // 当前正在加载的脚本文件名
-    private var currentScriptName: String = ""
-
-    // 获取事件分类和包名映射
-    fun getEventCategories(): Map<String, String> = eventCategories
+    // 获取当前正在加载的脚本名称
+    fun getCurrentScript(): String? {
+        return currentScriptName.ifEmpty { null }
+    }
 
     // 设置当前正在加载的脚本名称
     fun setCurrentScript(scriptName: String) {
         currentScriptName = scriptName
     }
+
+    // 获取事件分类和包名映射
+    fun getEventCategories(): Map<String, String> = eventCategories
 
     // 清除特定脚本的事件处理器
     fun clearHandlersForScript(scriptName: String) {

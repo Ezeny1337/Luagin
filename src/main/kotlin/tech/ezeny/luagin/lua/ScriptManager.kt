@@ -3,7 +3,9 @@ package tech.ezeny.luagin.lua
 import org.luaj.vm2.Globals
 import org.luaj.vm2.lib.jse.JsePlatform
 import tech.ezeny.luagin.events.EventManager
+import tech.ezeny.luagin.utils.CommunicationUtils
 import tech.ezeny.luagin.utils.PLog
+import tech.ezeny.luagin.utils.ScriptUtils
 import java.io.File
 
 class ScriptManager(
@@ -45,6 +47,7 @@ class ScriptManager(
 
     fun reloadAllScripts(): Int {
         eventManager.clearHandlers()
+        CommunicationUtils.clearAllFunctions()
         return loadAllScripts()
     }
 
@@ -55,7 +58,7 @@ class ScriptManager(
         }
 
         return try {
-            eventManager.setCurrentScript(scriptFile.name)
+            ScriptUtils.setCurrentScript(scriptFile.name)
             val scriptGlobals = createScriptEnvironment()
             scriptGlobals.loadfile(scriptFile.absolutePath).call()
             scriptEnvironments[scriptFile.absolutePath] = scriptGlobals
@@ -79,6 +82,7 @@ class ScriptManager(
         }
 
         eventManager.clearHandlersForScript(scriptFile.name)
+        CommunicationUtils.clearScriptFunctions(scriptFile.name)
         scriptEnvironments.remove(scriptFile.absolutePath)
         return loadScript(scriptFile)
     }

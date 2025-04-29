@@ -14,7 +14,7 @@ object EventsAPI : LuaAPIProvider, KoinComponent {
     private val apiNames = mutableListOf<String>()
 
     override fun registerAPI(globals: Globals) {
-        // 在 Lua 环境中创建全局 events table
+        // 创建 events 表
         val eventsTable = LuaTable()
         globals.set("events", eventsTable)
 

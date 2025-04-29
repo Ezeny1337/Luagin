@@ -49,6 +49,7 @@ object LanguageUtils {
             enConfig.set("log.info.utils_api_set", "Utils API has been set")
             enConfig.set("log.info.files_api_set", "Files API has been set")
             enConfig.set("log.info.yaml_api_set", "YAML API has been set")
+            enConfig.set("log.info.comm_api_set","Comm API has been set")
 
             // 警告级别消息
             enConfig.set("log.warning.event_not_found", "Event class {0}.{1} not found")
@@ -70,6 +71,8 @@ object LanguageUtils {
             enConfig.set("log.warning.mkdirs_error", "Failed to create directory {0}: {1}")
             enConfig.set("log.warning.create_file_error", "Failed to create file {0}: {1}")
             enConfig.set("log.warning.dir_not_found", "Directory not found: {0}")
+            enConfig.set("log.warning.function_not_found","{0} script cannot find the function: {1}")
+            enConfig.set("log.warning.function_call_error","Error in {0} script`s {1} function call: {2}")
 
             // 配置文件消息
             enConfig.set("config.loaded", "Loaded config: {0}")
@@ -128,6 +131,7 @@ object LanguageUtils {
             zhConfig.set("log.info.utils_api_set","Utils API 已设置")
             zhConfig.set("log.info.files_api_set","Files API 已设置")
             zhConfig.set("log.info.yaml_api_set","YAML API 已设置")
+            zhConfig.set("log.info.comm_api_set","Comm API 已设置")
 
             zhConfig.set("log.warning.event_not_found","找不到事件类 {0}.{1}")
             zhConfig.set("log.warning.register_event_handler_error","注册事件处理器时出错: {0}")
@@ -148,6 +152,8 @@ object LanguageUtils {
             zhConfig.set("log.warning.mkdirs_error","创建目录 {0} 失败: {1}")
             zhConfig.set("log.warning.create_file_error","创建文件 {0} 失败: {1}")
             zhConfig.set("log.warning.dir_not_found","目录不存在: {0}")
+            zhConfig.set("log.warning.function_not_found","{0} 脚本找不到函数: {1}")
+            zhConfig.set("log.warning.function_call_error","{0} 脚本的 {1} 函数调用出错: {2}")
 
             // 配置文件消息
             zhConfig.set("config.loaded", "加载了配置: {0}")
