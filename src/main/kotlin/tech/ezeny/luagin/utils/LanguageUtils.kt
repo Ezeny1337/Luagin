@@ -85,8 +85,6 @@ object LanguageUtils {
             enConfig.set("log.warning.mysql_query_failed","Failed to query MySQL table {0}: {1}")
 
             // 配置文件消息
-            enConfig.set("config.loaded", "Loaded config: {0}")
-            enConfig.set("config.saved", "Saved config: {0}")
             enConfig.set("config.not_found", "Config not found: {0}")
             enConfig.set("config.load_failed", "Failed to load config file {0}: {1}")
             enConfig.set("config.save_failed", "Failed to save config file {0}: {1}")
@@ -183,8 +181,6 @@ object LanguageUtils {
             zhConfig.set("log.severe.mysql_connection_failed","连接 MySQL 失败: {0}")
 
             // 配置文件消息
-            zhConfig.set("config.loaded", "加载了配置: {0}")
-            zhConfig.set("config.saved", "保存了配置: {0}")
             zhConfig.set("config.not_found", "配置文件不存在: {0}")
             zhConfig.set("config.load_failed", "加载配置文件 {0} 失败: {1}")
             zhConfig.set("config.save_failed", "保存配置文件 {0} 失败: {1}")

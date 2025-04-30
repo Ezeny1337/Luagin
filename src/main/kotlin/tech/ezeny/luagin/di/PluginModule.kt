@@ -10,12 +10,14 @@ import tech.ezeny.luagin.i18n.I18n
 import tech.ezeny.luagin.lua.APIRegister
 import tech.ezeny.luagin.lua.LuaEnvManager
 import tech.ezeny.luagin.lua.ScriptManager
+import tech.ezeny.luagin.permissions.PermissionManager
 
 val pluginModules = module {
     single { get<Luagin>() } // 提供 Luagin 实例
 
     single { YamlManager(get()) }
     single { I18n(get()) }
+    single { PermissionManager(get()) }
     single { MySQLManager(get(), get()) }
     single { EventManager(get()) }
     single { APIRegister(get()) }
@@ -26,6 +28,7 @@ val pluginModules = module {
 fun getKoinModules() {
     getKoin().get<YamlManager>()
     getKoin().get<I18n>()
+    getKoin().get<PermissionManager>()
     getKoin().get<MySQLManager>()
     getKoin().get<EventManager>()
     getKoin().get<APIRegister>()

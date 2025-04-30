@@ -26,7 +26,7 @@ class YamlManager(private val plugin: Luagin) {
     }
 
     /**
-     * 获取或加载 YAML 文件配置 (基于插件数据目录的相对路径)
+     * 获取或加载 YAML 文件配置
      *
      * @param relativePath 文件相对路径
      * @return YamlConfiguration 实例，文件不存在或加载失败返回 null
@@ -53,7 +53,6 @@ class YamlManager(private val plugin: Luagin) {
             val config = YamlConfiguration.loadConfiguration(file)
             configCache[normalizedPath] = config
             configFiles[normalizedPath] = file
-            PLog.info("config.loaded", normalizedPath)
             config
         } catch (e: Exception) {
             PLog.warning("config.load_failed", normalizedPath, e.message ?: "Unknown error")
@@ -83,7 +82,6 @@ class YamlManager(private val plugin: Luagin) {
 
         return try {
             config.save(file)
-            PLog.info("config.saved", normalizedPath)
             true
         } catch (e: IOException) {
             PLog.warning("config.save_failed", normalizedPath, e.message ?: "Unknown error")
