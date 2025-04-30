@@ -60,7 +60,7 @@ class I18n(private val yamlManager: YamlManager) {
                 value
             }
         } catch (e: IllegalArgumentException) {
-            PLog.warning("i18n.format_error", key, e.message ?: "Unknown error")
+            PLog.warning("i18n.format_failed", key, e.message ?: "Unknown error")
             value
         }
     }

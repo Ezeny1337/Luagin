@@ -13,7 +13,7 @@ class YamlManager(private val plugin: Luagin) {
 
     init {
         // 插件配置目录
-        val configFolder: File = File(plugin.dataFolder, "configs").apply {
+        val pluginConfigFolder: File = File(plugin.dataFolder, "configs").apply {
             if (!exists()) mkdirs()
         }
 
@@ -32,7 +32,12 @@ class YamlManager(private val plugin: Luagin) {
      * @return YamlConfiguration 实例，文件不存在或加载失败返回 null
      */
     fun getConfig(relativePath: String): YamlConfiguration? {
-        val normalizedPath = relativePath.replace("/", File.separator)
+        val normalizedPath = if (!relativePath.endsWith(".yml")) {
+            "$relativePath.yml"
+        } else {
+            relativePath
+        }.replace("/", File.separator)
+
         if (configCache.containsKey(normalizedPath)) {
             return configCache[normalizedPath]
         }
@@ -51,7 +56,7 @@ class YamlManager(private val plugin: Luagin) {
             PLog.info("config.loaded", normalizedPath)
             config
         } catch (e: Exception) {
-            PLog.warning("config.load_error", normalizedPath, e.message ?: "Unknown error")
+            PLog.warning("config.load_failed", normalizedPath, e.message ?: "Unknown error")
             null
         }
     }
@@ -63,7 +68,12 @@ class YamlManager(private val plugin: Luagin) {
      * @return 是否保存成功
      */
     fun saveConfig(relativePath: String): Boolean {
-        val normalizedPath = relativePath.replace("/", File.separator)
+        val normalizedPath = if (!relativePath.endsWith(".yml")) {
+            "$relativePath.yml"
+        } else {
+            relativePath
+        }.replace("/", File.separator)
+
         val config = configCache[normalizedPath]
         val file = configFiles[normalizedPath]
 
@@ -76,7 +86,7 @@ class YamlManager(private val plugin: Luagin) {
             PLog.info("config.saved", normalizedPath)
             true
         } catch (e: IOException) {
-            PLog.warning("config.save_error", normalizedPath, e.message ?: "Unknown error")
+            PLog.warning("config.save_failed", normalizedPath, e.message ?: "Unknown error")
             false
         }
     }

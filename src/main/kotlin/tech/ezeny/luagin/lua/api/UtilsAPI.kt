@@ -34,7 +34,7 @@ object UtilsAPI : LuaAPIProvider {
                     try {
                         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command)
                     } catch (e: Exception) {
-                        PLog.warning("log.warning.command_exec_error", command, e.message ?: "Unknown error")
+                        PLog.warning("log.warning.command_exec_failed", command, e.message ?: "Unknown error")
                     }
                 }
 
@@ -66,7 +66,7 @@ object UtilsAPI : LuaAPIProvider {
                     try {
                         callback.invoke(extraArgs)
                     } catch (e: Exception) {
-                        PLog.warning("log.warning.execute_after_error", e.message ?: "Unknown error")
+                        PLog.warning("log.warning.execute_after_failed", e.message ?: "Unknown error")
                     }
                 }, delayTicks)
 

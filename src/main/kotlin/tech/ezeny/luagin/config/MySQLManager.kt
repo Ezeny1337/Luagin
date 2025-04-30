@@ -1,0 +1,277 @@
+package tech.ezeny.luagin.config
+
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
+import org.bukkit.configuration.file.YamlConfiguration
+import tech.ezeny.luagin.Luagin
+import tech.ezeny.luagin.utils.PLog
+import java.io.File
+import java.sql.Connection
+import java.sql.SQLException
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
+
+class MySQLManager(private val plugin: Luagin, private val yamlManager: YamlManager) {
+    private var dataSource: HikariDataSource? = null
+    private val cacheManager = CacheManager()
+    private val executor = Executors.newFixedThreadPool(4)
+
+    init {
+        try {
+            val config = yamlManager.getConfig("configs/mysql.yml") ?: run {
+                createDefaultConfig()
+                yamlManager.getConfig("configs/mysql.yml") ?: throw IllegalStateException("无法加载MySQL配置")
+            }
+
+            val hikariConfig = HikariConfig().apply {
+                jdbcUrl = "jdbc:mysql://${config.getString("host", "localhost")}:${
+                    config.getInt(
+                        "port",
+                        3306
+                    )
+                }/${config.getString("database", "luagin")}"
+                username = config.getString("username", "root")
+                password = config.getString("password", "")
+                maximumPoolSize = config.getInt("pool-size", 10)
+                addDataSourceProperty("cachePrepStmts", "true")
+                addDataSourceProperty("prepStmtCacheSize", "250")
+                addDataSourceProperty("prepStmtCacheSqlLimit", "2048")
+                addDataSourceProperty("useServerPrepStmts", "true")
+                addDataSourceProperty("useLocalSessionState", "true")
+                addDataSourceProperty("rewriteBatchedStatements", "true")
+                addDataSourceProperty("cacheResultSetMetadata", "true")
+                addDataSourceProperty("cacheServerConfiguration", "true")
+                addDataSourceProperty("elideSetAutoCommits", "true")
+                addDataSourceProperty("maintainTimeStats", "false")
+            }
+
+            dataSource = HikariDataSource(hikariConfig)
+            testConnection()
+            PLog.info("log.info.mysql_connected")
+        } catch (e: Exception) {
+            PLog.severe("log.severe.mysql_connection_failed", e.message ?: "Unknown error")
+        }
+    }
+
+    private fun createDefaultConfig() {
+        val defaultConfig = YamlConfiguration().apply {
+            set("host", "localhost")
+            set("port", 3306)
+            set("database", "luagin")
+            set("username", "root")
+            set("password", "")
+            set("pool-size", 10)
+        }
+
+        val configFile = File(plugin.dataFolder, "configs/mysql.yml")
+        defaultConfig.save(configFile)
+    }
+
+    private fun testConnection() {
+        getConnection().use { connection ->
+            connection.createStatement().use { statement ->
+                statement.execute("SELECT 1")
+            }
+        }
+    }
+
+    fun getConnection(): Connection {
+        return dataSource?.connection ?: throw SQLException("Database connection is not initialized")
+    }
+
+    fun close() {
+        dataSource?.close()
+        dataSource = null
+        cacheManager.shutdown()
+        executor.shutdown()
+        try {
+            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+                executor.shutdownNow()
+            }
+        } catch (e: InterruptedException) {
+            executor.shutdownNow()
+        }
+    }
+
+    // 创建表
+    fun createTable(tableName: String, columns: Map<String, String>) {
+        val columnDefinitions = columns.entries.joinToString(",\n") { (name, type) ->
+            "$name $type"
+        }
+
+        val sql = """
+            CREATE TABLE IF NOT EXISTS $tableName (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                $columnDefinitions
+            )
+        """.trimIndent()
+
+        getConnection().use { connection ->
+            connection.createStatement().use { statement ->
+                statement.execute(sql)
+            }
+        }
+    }
+
+    // 异步插入数据
+    fun insert(tableName: String, values: Map<String, Any>, callback: ((Int) -> Unit)? = null) {
+        val cacheKey = "$tableName:${values.values.joinToString(":")}"
+
+        // 先更新缓存
+        cacheManager.put(cacheKey, values)
+
+        // 异步执行数据库操作
+        executor.execute {
+            try {
+                val columns = values.keys.joinToString(", ")
+                val placeholders = values.keys.joinToString(", ") { "?" }
+                val sql = "INSERT INTO $tableName ($columns) VALUES ($placeholders)"
+
+                getConnection().use { connection ->
+                    connection.prepareStatement(sql, java.sql.Statement.RETURN_GENERATED_KEYS).use { statement ->
+                        values.values.forEachIndexed { index, value ->
+                            when (value) {
+                                is String -> statement.setString(index + 1, value)
+                                is Int -> statement.setInt(index + 1, value)
+                                is Double -> statement.setDouble(index + 1, value)
+                                is Boolean -> statement.setBoolean(index + 1, value)
+                                else -> statement.setString(index + 1, value.toString())
+                            }
+                        }
+                        statement.executeUpdate()
+
+                        statement.generatedKeys.use { keys ->
+                            if (keys.next()) {
+                                val id = keys.getInt(1)
+                                callback?.invoke(id)
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                PLog.warning("log.warning.mysql_insert_failed", tableName, e.message ?: "Unknown error")
+                callback?.invoke(-1)
+            }
+        }
+    }
+
+    // 更新数据
+    fun update(
+        tableName: String,
+        values: Map<String, Any>,
+        where: String,
+        whereArgs: List<Any>,
+        callback: ((Int) -> Unit)? = null
+    ) {
+        val cacheKey = "$tableName:$where:${whereArgs.joinToString(":")}"
+
+        // 先更新缓存
+        cacheManager.put(cacheKey, values)
+
+        // 延迟写入数据库
+        cacheManager.scheduleWrite(cacheKey, {
+            try {
+                val setClause = values.keys.joinToString(", ") { "$it = ?" }
+                val sql = "UPDATE $tableName SET $setClause WHERE $where"
+
+                getConnection().use { connection ->
+                    connection.prepareStatement(sql).use { statement ->
+                        var index = 1
+                        values.values.forEach { value ->
+                            when (value) {
+                                is String -> statement.setString(index++, value)
+                                is Int -> statement.setInt(index++, value)
+                                is Double -> statement.setDouble(index++, value)
+                                is Boolean -> statement.setBoolean(index++, value)
+                                else -> statement.setString(index++, value.toString())
+                            }
+                        }
+                        whereArgs.forEach { arg ->
+                            when (arg) {
+                                is String -> statement.setString(index++, arg)
+                                is Int -> statement.setInt(index++, arg)
+                                is Double -> statement.setDouble(index++, arg)
+                                is Boolean -> statement.setBoolean(index++, arg)
+                                else -> statement.setString(index++, arg.toString())
+                            }
+                        }
+                        val affectedRows = statement.executeUpdate()
+                        callback?.invoke(affectedRows)
+                    }
+                }
+            } catch (e: Exception) {
+                PLog.warning("log.warning.mysql_update_failed", tableName, e.message ?: "Unknown error")
+                callback?.invoke(-1)
+            }
+        })
+    }
+
+    // 异步查询数据
+    fun query(
+        tableName: String,
+        columns: List<String> = listOf("*"),
+        where: String? = null,
+        whereArgs: List<Any> = emptyList(),
+        callback: ((List<Map<String, Any>>) -> Unit)? = null
+    ) {
+        val cacheKey = "$tableName:${columns.joinToString(":")}:$where:${whereArgs.joinToString(":")}"
+
+        // 先检查缓存
+        val cachedResult: List<Map<String, Any>>? = cacheManager.get(cacheKey)
+        if (cachedResult != null) {
+            callback?.invoke(cachedResult)
+            return
+        }
+
+        // 异步执行数据库查询
+        executor.execute {
+            try {
+                val columnList = columns.joinToString(", ")
+                val whereClause = where?.let { "WHERE $it" } ?: ""
+                val sql = "SELECT $columnList FROM $tableName $whereClause"
+
+                val results = mutableListOf<Map<String, Any>>()
+
+                getConnection().use { connection ->
+                    connection.prepareStatement(sql).use { statement ->
+                        whereArgs.forEachIndexed { index, arg ->
+                            when (arg) {
+                                is String -> statement.setString(index + 1, arg)
+                                is Int -> statement.setInt(index + 1, arg)
+                                is Double -> statement.setDouble(index + 1, arg)
+                                is Boolean -> statement.setBoolean(index + 1, arg)
+                                else -> statement.setString(index + 1, arg.toString())
+                            }
+                        }
+
+                        statement.executeQuery().use { resultSet ->
+                            val metaData = resultSet.metaData
+                            while (resultSet.next()) {
+                                val row = mutableMapOf<String, Any>()
+                                for (i in 1..metaData.columnCount) {
+                                    val columnName = metaData.getColumnName(i)
+                                    row[columnName] = when (metaData.getColumnType(i)) {
+                                        java.sql.Types.INTEGER -> resultSet.getInt(i)
+                                        java.sql.Types.DOUBLE -> resultSet.getDouble(i)
+                                        java.sql.Types.BOOLEAN -> resultSet.getBoolean(i)
+                                        else -> resultSet.getString(i)
+                                    }
+                                }
+                                results.add(row)
+                            }
+                        }
+                    }
+                }
+
+                // 更新缓存
+                cacheManager.put(cacheKey, results, 1.toDuration(DurationUnit.MINUTES))
+                callback?.invoke(results)
+            } catch (e: Exception) {
+                PLog.warning("log.warning.mysql_query_failed", tableName, e.message ?: "Unknown error")
+                callback?.invoke(emptyList())
+            }
+        }
+    }
+}

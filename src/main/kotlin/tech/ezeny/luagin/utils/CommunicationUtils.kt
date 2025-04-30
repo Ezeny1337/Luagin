@@ -78,7 +78,7 @@ object CommunicationUtils {
             function.invoke(args)
         } catch (e: Exception) {
             PLog.warning(
-                "log.warning.function_call_error",
+                "log.warning.function_call_failed",
                 scriptName,
                 functionName,
                 e.message ?: "Unknown error"

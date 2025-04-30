@@ -41,7 +41,7 @@ object FilesAPI : LuaAPIProvider {
                     val content = file.readText(Charsets.UTF_8)
                     valueOf(content)
                 } catch (e: IOException) {
-                    PLog.warning("log.warning.read_file_error", relativePath, e.message ?: "Unknown error")
+                    PLog.warning("log.warning.read_file_failed", relativePath, e.message ?: "Unknown error")
                     NIL
                 }
             }
@@ -70,7 +70,7 @@ object FilesAPI : LuaAPIProvider {
                     }
                     TRUE
                 } catch (e: IOException) {
-                    PLog.warning("log.warning.write_file_error", relativePath, e.message ?: "Unknown error")
+                    PLog.warning("log.warning.write_file_failed", relativePath, e.message ?: "Unknown error")
                     FALSE
                 }
             }
@@ -90,7 +90,7 @@ object FilesAPI : LuaAPIProvider {
                 return try {
                     valueOf(dir.mkdirs())
                 } catch (e: IOException) {
-                    PLog.warning("log.warning.mkdirs_error", relativePath, e.message ?: "Unknown error")
+                    PLog.warning("log.warning.mkdirs_failed", relativePath, e.message ?: "Unknown error")
                     FALSE
                 }
             }
@@ -114,7 +114,7 @@ object FilesAPI : LuaAPIProvider {
                 return try {
                     valueOf(file.createNewFile())
                 } catch (e: IOException) {
-                    PLog.warning("log.warning.create_file_error", relativePath, e.message ?: "Unknown error")
+                    PLog.warning("log.warning.create_file_failed", relativePath, e.message ?: "Unknown error")
                     FALSE
                 }
             }

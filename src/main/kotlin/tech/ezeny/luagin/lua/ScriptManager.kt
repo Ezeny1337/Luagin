@@ -65,7 +65,7 @@ class ScriptManager(
             PLog.info("log.info.loading_lua_succeeded", scriptFile.name)
             true
         } catch (e: Exception) {
-            PLog.warning("log.warning.loading_lua_error", scriptFile.name, e.message ?: "Unknown error")
+            PLog.warning("log.warning.loading_lua_failed", scriptFile.name, e.message ?: "Unknown error")
             false
         }
     }
@@ -102,7 +102,7 @@ class ScriptManager(
                 scriptGlobals.set(api, apiValue)
                 PLog.info("log.info.copy_shared_api", api)
             } else {
-                PLog.warning("log.info.copy_shared_api_error", api)
+                PLog.warning("log.info.copy_shared_api_failed", api)
             }
         }
     }

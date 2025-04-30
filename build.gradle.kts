@@ -22,6 +22,8 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.luaj:luaj-jse:3.0.1")
     implementation("io.insert-koin:koin-core:4.0.4")
+    implementation("com.zaxxer:HikariCP:6.3.0")
+    implementation("com.mysql:mysql-connector-j:9.3.0")
 }
 
 val targetJavaVersion = 21

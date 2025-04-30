@@ -92,7 +92,7 @@ class EventManager(private val plugin: Luagin) : Listener {
         } catch (e: ClassNotFoundException) {
             PLog.warning("log.warning.event_not_found", basePackage, eventName)
         } catch (e: Exception) {
-            PLog.warning("log.warning.register_event_handler_error", e.message ?: "Unknown error")
+            PLog.warning("log.warning.register_event_handler_failed", e.message ?: "Unknown error")
         }
     }
 
@@ -123,7 +123,7 @@ class EventManager(private val plugin: Luagin) : Listener {
             try {
                 handler.call(luaEvent)
             } catch (e: LuaError) {
-                PLog.warning("log.warning.handle_event_error", scriptName, e.message ?: "Unknown error")
+                PLog.warning("log.warning.handle_event_failed", scriptName, e.message ?: "Unknown error")
             }
         }
     }

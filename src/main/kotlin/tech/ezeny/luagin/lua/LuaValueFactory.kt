@@ -89,7 +89,7 @@ object LuaValueFactory {
                         NIL
                     }
                 } catch (e: Exception) {
-                    PLog.warning("log.warning.getter_error", key, e.message ?: "Unknown error")
+                    PLog.warning("log.warning.getter_failed", key, e.message ?: "Unknown error")
                     NIL
                 }
             }
@@ -119,7 +119,7 @@ object LuaValueFactory {
                     }
                     NIL
                 } catch (e: Exception) {
-                    PLog.warning("log.warning.setter_error", key, e.message ?: "Unknown error")
+                    PLog.warning("log.warning.setter_failed", key, e.message ?: "Unknown error")
                     NIL
                 }
             }

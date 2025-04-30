@@ -16,7 +16,7 @@ object CommunicationAPI : LuaAPIProvider, KoinComponent {
         val scriptCommTable = LuaTable()
         globals.set("comm", scriptCommTable)
 
-        // 注册暴露函数的API
+        // 暴露函数
         scriptCommTable.set("expose_func", object : VarArgFunction() {
             override fun invoke(args: Varargs): Varargs {
                 if (args.narg() < 2 || !args.arg(1).isstring() || !args.arg(2).isfunction()) {
@@ -31,7 +31,7 @@ object CommunicationAPI : LuaAPIProvider, KoinComponent {
             }
         })
 
-        // 注册取消暴露函数的API
+        // 取消暴露函数
         scriptCommTable.set("unexpose_func", object : VarArgFunction() {
             override fun invoke(args: Varargs): Varargs {
                 if (args.narg() < 1 || !args.arg(1).isstring()) {
@@ -45,7 +45,7 @@ object CommunicationAPI : LuaAPIProvider, KoinComponent {
             }
         })
 
-        // 注册调用其他脚本函数的API
+        // 调用其他脚本函数
         scriptCommTable.set("call_func", object : VarArgFunction() {
             override fun invoke(args: Varargs): Varargs {
                 if (args.narg() < 2 || !args.arg(1).isstring() || !args.arg(2).isstring()) {
@@ -67,7 +67,7 @@ object CommunicationAPI : LuaAPIProvider, KoinComponent {
             }
         })
 
-        // 注册获取所有暴露函数的API
+        // 获取所有暴露函数
         scriptCommTable.set("get_exposed_functions", object : VarArgFunction() {
             override fun invoke(args: Varargs): Varargs {
                 return CommunicationUtils.getExposedFunctions()
