@@ -8,6 +8,7 @@ import tech.ezeny.luagin.di.pluginModules
 import tech.ezeny.luagin.utils.PLog
 
 class Luagin : JavaPlugin() {
+
     override fun onEnable() {
         // 初始化日志系统
         PLog.initialize(logger)

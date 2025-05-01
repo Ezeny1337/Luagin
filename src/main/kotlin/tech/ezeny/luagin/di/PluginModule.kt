@@ -17,7 +17,7 @@ val pluginModules = module {
 
     single { YamlManager(get()) }
     single { I18n(get()) }
-    single { PermissionManager(get()) }
+    single { PermissionManager(get(), get()) }
     single { MySQLManager(get(), get()) }
     single { EventManager(get()) }
     single { APIRegister(get()) }

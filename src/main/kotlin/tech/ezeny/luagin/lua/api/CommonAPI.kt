@@ -30,7 +30,7 @@ object CommonAPI : LuaAPIProvider, KoinComponent {
                 val permission = args.checkjstring(2)
 
                 val player = Bukkit.getPlayer(playerName) ?: return valueOf(false)
-                return valueOf(permissionManager.hasPermission(player, permission))
+                return valueOf(player.hasPermission(permission))
             }
         })
 
