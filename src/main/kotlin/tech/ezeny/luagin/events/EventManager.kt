@@ -35,29 +35,39 @@ class EventManager(private val plugin: Luagin) : Listener {
         "world" to "org.bukkit.event.world"
     )
 
-    // 获取当前正在加载的脚本名称
+    /**
+     * 获取当前正在加载的脚本名称
+     */
     fun getCurrentScript(): String? {
         return currentScriptName.ifEmpty { null }
     }
 
-    // 设置当前正在加载的脚本名称
+    /**
+     * 设置当前正在加载的脚本名称
+     */
     fun setCurrentScript(scriptName: String) {
         currentScriptName = scriptName
     }
 
-    // 获取事件分类和包名映射
+    /**
+     * 获取所有事件分类及其对应的包名
+     */
     fun getEventCategories(): Map<String, String> = eventCategories
 
-    // 清除特定脚本的事件处理器
+    /**
+     * 清除指定脚本的所有事件处理器
+     * 会移除脚本相关的 Lua 事件处理函数，并取消注册事件监听器
+     */
     fun clearHandlersForScript(scriptName: String) {
         // 遍历所有事件类型
         val eventClassesToRemove = mutableListOf<Class<out Event>>()
 
         luaEventHandlers.forEach { (eventClass, handlers) ->
-            // 移除属于指定脚本的处理器
+            // 过滤并移除属于指定脚本的处理器
             val handlersToRemove = handlers.filter { it.first == scriptName }
             handlers.removeAll(handlersToRemove)
 
+            // 如果某个事件类型没有剩余的处理器，则标记为需要移除
             if (handlers.isEmpty()) {
                 eventClassesToRemove.add(eventClass)
             }
@@ -69,14 +79,20 @@ class EventManager(private val plugin: Luagin) : Listener {
         PLog.info("log.info.clear_handlers_for_script", scriptName)
     }
 
-    // 注册事件处理器方法
+    /**
+     * 注册 Lua 事件处理器
+     *
+     * @param basePackage 事件类的基础包名
+     * @param eventName 事件类的名称
+     * @param handler Lua 事件处理函数
+     */
     fun registerLuaEventHandler(basePackage: String, eventName: String, handler: LuaFunction) {
         try {
             // 尝试加载事件类
             val eventClassName = "$basePackage.$eventName"
             val eventClass = Class.forName(eventClassName) as Class<out Event>
 
-            // 将处理器添加到映射中，并记录脚本名称
+            // 添加处理器到事件类的处理器列表中，并记录当前脚本名称
             if (!luaEventHandlers.containsKey(eventClass)) {
                 luaEventHandlers[eventClass] = mutableListOf()
             }
@@ -96,6 +112,11 @@ class EventManager(private val plugin: Luagin) : Listener {
         }
     }
 
+    /**
+     * 为指定的事件类型注册 Bukkit 监听器
+     *
+     * @param eventClass 事件类
+     */
     private fun registerBukkitListener(eventClass: Class<out Event>) {
         plugin.server.pluginManager.registerEvent(
             eventClass,
@@ -111,6 +132,11 @@ class EventManager(private val plugin: Luagin) : Listener {
         PLog.info("log.info.register_bukkit_listener", eventClass.simpleName)
     }
 
+    /**
+     * 处理事件，调用注册的所有 Lua 事件处理函数
+     *
+     * @param event Bukkit 事件对象
+     */
     private fun handleEvent(event: Event) {
         val eventClass = event.javaClass
         val handlers = luaEventHandlers[eventClass] ?: return
@@ -128,6 +154,9 @@ class EventManager(private val plugin: Luagin) : Listener {
         }
     }
 
+    /**
+     * 清除所有 Lua 事件处理器，并注销所有 Bukkit 监听器
+     */
     fun clearHandlers() {
         luaEventHandlers.clear()
         // 取消注册所有动态监听器

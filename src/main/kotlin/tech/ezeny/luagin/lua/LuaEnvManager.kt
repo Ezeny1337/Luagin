@@ -12,11 +12,6 @@ class LuaEnvManager(plugin: Luagin,private val apiRegister: APIRegister) {
         private set
     var scriptsFolder: File = File(plugin.dataFolder, "scripts")
 
-    /**
-     * 获取已注册的 API 列表
-     */
-    fun getSharedAPIs(): List<String> = apiRegister.apiNames
-
     init {
         ensureScriptsFolderExists()
 
@@ -42,4 +37,9 @@ class LuaEnvManager(plugin: Luagin,private val apiRegister: APIRegister) {
             scriptsFolder.mkdirs()
         }
     }
+
+    /**
+     * 获取已注册的 API 列表
+     */
+    fun getSharedAPIs(): List<String> = apiRegister.apiNames
 }

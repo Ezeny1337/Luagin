@@ -40,8 +40,6 @@ object LanguageUtils {
             enConfig.set("log.info.set_environment", "Lua main environment has been set")
             enConfig.set("log.info.lua_loading_completed", "All Lua scripts loaded successfully, {0} scripts in total")
             enConfig.set("log.info.loading_lua_succeeded", "Lua loaded successfully: {0}")
-            enConfig.set("log.info.copy_shared_api", "Shared API: {0} copied to script environment")
-            enConfig.set("log.info.copy_shared_api_failed", "Shared API: {0} is nil in the main environment")
             enConfig.set("log.info.mysql_connected","Connected to MySQL")
             enConfig.set("log.info.events_api_set", "Events API has been set")
             enConfig.set("log.info.chat_api_set", "Chat API has been set")
@@ -66,9 +64,6 @@ object LanguageUtils {
             enConfig.set("log.warning.getter_failed", "Failed to find or invoking getter {0} or {1}: {2}")
             enConfig.set("log.warning.set_property_failed", "Failed to set property {0}: {1}")
             enConfig.set("log.warning.set_property_failed_not_found", "Cannot set property {0}: suitable setter method not found")
-            enConfig.set("log.warning.lua_dir_not_found", "Script directory does not exist: {0}")
-            enConfig.set("log.warning.lua_not_found", "Script file not found: {0}")
-            enConfig.set("log.warning.loading_lua_failed", "Failed to load {0}: {1}")
             enConfig.set("log.warning.player_not_found", "Player not found: {0}")
             enConfig.set("log.warning.command_exec_failed", "Failed to execute command {0}: {1}")
             enConfig.set("log.warning.execute_after_failed", "Failed to execute delayed callback: {0}")
@@ -83,6 +78,15 @@ object LanguageUtils {
             enConfig.set("log.warning.mysql_insert_failed","Failed to insert MySQL table {0}: {1}")
             enConfig.set("log.warning.mysql_update_failed","Failed to update MySQL table {0}: {1}")
             enConfig.set("log.warning.mysql_query_failed","Failed to query MySQL table {0}: {1}")
+            enConfig.set("log.warning.execute_command_failed","Failed to execute command /{0}: {1}")
+
+            // 严重级别消息
+            enConfig.set("log.severe.copy_shared_api_failed", "Shared API: {0} is nil in the main environment")
+            enConfig.set("log.severe.lua_dir_not_found", "Script directory does not exist: {0}")
+            enConfig.set("log.severe.lua_not_found", "Script file not found: {0}")
+            enConfig.set("log.severe.loading_lua_failed", "Failed to load {0}: {1}")
+            enConfig.set("log.severe.mysql_connection_failed","Failed to connect MySQL: {0}")
+            enConfig.set("log.severe.register_permission_failed","Failed to register permission {0}: {1}")
 
             // 配置文件消息
             enConfig.set("config.not_found", "Config not found: {0}")
@@ -108,7 +112,6 @@ object LanguageUtils {
             enConfig.set("command.invalid_argument","Invalid argument: {0}")
 
             // I18n 消息
-            enConfig.set("i18n.missing_key", "I18n key not found: {0} {1}")
             enConfig.set("i18n.format_failed", "I18n format failed: {0}")
 
             enConfig.save(enFile)
@@ -134,8 +137,6 @@ object LanguageUtils {
             zhConfig.set("log.info.set_environment","Lua 主环境已设置")
             zhConfig.set("log.info.lua_loading_completed","所有 Lua 脚本加载完成, 共加载 {0} 个脚本")
             zhConfig.set("log.info.loading_lua_succeeded","成功加载 Lua: {0}")
-            zhConfig.set("log.info.copy_shared_api","已复制共享 API: {0} 到脚本环境")
-            zhConfig.set("log.info.copy_shared_api_failed","共享 API: {0} 在主环境为 nil")
             zhConfig.set("log.info.mysql_connected","已连接到 MySQL")
             zhConfig.set("log.info.events_api_set","Events API 已设置")
             zhConfig.set("log.info.chat_api_set","Chat API 已设置")
@@ -159,9 +160,6 @@ object LanguageUtils {
             zhConfig.set("log.warning.getter_failed","查找或调用 getter {0} 或 {1} 失败: {2}")
             zhConfig.set("log.warning.set_property_failed","设置属性 {0} 失败: {1}")
             zhConfig.set("log.warning.set_property_failed_not_found","无法设置属性 {0}: 找不到合适的 setter 方法")
-            zhConfig.set("log.warning.lua_dir_not_found","脚本目录不存在: {0}")
-            zhConfig.set("log.warning.lua_not_found","脚本文件不存在: {0}")
-            zhConfig.set("log.warning.loading_lua_failed","加载 {0} 失败: {1}")
             zhConfig.set("log.warning.player_not_found","找不到玩家: {0}")
             zhConfig.set("log.warning.command_exec_failed","执行命令 {0} 失败: {1}")
             zhConfig.set("log.warning.execute_after_failed","执行延迟回调失败: {0}")
@@ -176,9 +174,15 @@ object LanguageUtils {
             zhConfig.set("log.warning.mysql_insert_failed","插入 MySQL 表 {0} 失败: {1}")
             zhConfig.set("log.warning.mysql_update_failed","更新 MySQL 表 {0} 失败: {1}")
             zhConfig.set("log.warning.mysql_query_failed","查询 MySQL 表 {0} 失败: {1}")
+            zhConfig.set("log.warning.execute_command_failed","执行命令 /{0} 失败: {1}")
 
             // 严重级别消息
+            zhConfig.set("log.severe.copy_shared_api_failed","共享 API: {0} 在主环境为 nil")
+            zhConfig.set("log.severe.lua_dir_not_found","脚本目录不存在: {0}")
+            zhConfig.set("log.severe.lua_not_found","脚本文件不存在: {0}")
+            zhConfig.set("log.severe.loading_lua_failed","加载 {0} 失败: {1}")
             zhConfig.set("log.severe.mysql_connection_failed","连接 MySQL 失败: {0}")
+            zhConfig.set("log.severe.register_permission_failed","注册权限 {0} 失败: {1}")
 
             // 配置文件消息
             zhConfig.set("config.not_found", "配置文件不存在: {0}")
@@ -196,14 +200,8 @@ object LanguageUtils {
             zhConfig.set("command.reload.script.failure", "无法重新加载脚本 {0}, 请检查脚本是否存在")
             zhConfig.set("command.reload.all.loading", "正在重新加载所有 Lua 脚本...")
             zhConfig.set("command.reload.all.success", "成功重新加载了 {0} 个脚本")
-            zhConfig.set("command.no_permission","权限不足!")
-            zhConfig.set("command.registered","注册了命令: {0}")
-            zhConfig.set("command.not_found","未知命令: {0}")
-            zhConfig.set("command.missing_argument","缺少参数: {0}")
-            zhConfig.set("command.invalid_argument","无效参数: {0}")
 
             // I18n 消息
-            zhConfig.set("i18n.missing_key", "I18n 找不到 Key: {0} {1}")
             zhConfig.set("i18n.format_failed", "I18n 格式化失败: {0}")
 
             zhConfig.save(zhFile)

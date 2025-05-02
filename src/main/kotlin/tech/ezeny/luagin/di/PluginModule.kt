@@ -3,6 +3,7 @@ package tech.ezeny.luagin.di
 import org.koin.dsl.module
 import org.koin.java.KoinJavaComponent.getKoin
 import tech.ezeny.luagin.Luagin
+import tech.ezeny.luagin.commands.CommandManager
 import tech.ezeny.luagin.config.YamlManager
 import tech.ezeny.luagin.config.MySQLManager
 import tech.ezeny.luagin.events.EventManager
@@ -18,6 +19,7 @@ val pluginModules = module {
     single { YamlManager(get()) }
     single { I18n(get()) }
     single { PermissionManager(get(), get()) }
+    single { CommandManager(get(), get()) }
     single { MySQLManager(get(), get()) }
     single { EventManager(get()) }
     single { APIRegister(get()) }
@@ -29,6 +31,7 @@ fun getKoinModules() {
     getKoin().get<YamlManager>()
     getKoin().get<I18n>()
     getKoin().get<PermissionManager>()
+    getKoin().get<CommandManager>()
     getKoin().get<MySQLManager>()
     getKoin().get<EventManager>()
     getKoin().get<APIRegister>()

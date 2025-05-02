@@ -3,8 +3,10 @@ package tech.ezeny.luagin
 import org.bukkit.plugin.java.JavaPlugin
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
+import org.koin.java.KoinJavaComponent.getKoin
 import tech.ezeny.luagin.di.getKoinModules
 import tech.ezeny.luagin.di.pluginModules
+import tech.ezeny.luagin.permissions.PermissionManager
 import tech.ezeny.luagin.utils.PLog
 
 class Luagin : JavaPlugin() {
@@ -24,6 +26,9 @@ class Luagin : JavaPlugin() {
     }
 
     override fun onDisable() {
+        val permissionManager = getKoin().get<PermissionManager>()
+        permissionManager.cleanup()
+
         PLog.info("log.info.unloading_completed")
     }
 }

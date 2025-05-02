@@ -48,7 +48,6 @@ class I18n(private val yamlManager: YamlManager) {
 
         // 如果仍然找不到，返回键本身
         if (value == null) {
-            PLog.warning("i18n.missing_key", key, currentLocale)
             return key
         }
 

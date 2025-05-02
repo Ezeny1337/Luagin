@@ -175,13 +175,11 @@ object FilesAPI : LuaAPIProvider {
      * 将相对路径转换为基于插件目录的绝对路径
      */
     private fun getAbsolutePath(relativePath: String): String {
-        // 如果已经是绝对路径并且在插件目录内，直接返回
         val file = File(relativePath)
         if (file.isAbsolute && isPathSafe(file)) {
             return relativePath
         }
 
-        // 否则，将其视为相对于插件目录的路径
         return File(plugin.dataFolder, relativePath).absolutePath
     }
 

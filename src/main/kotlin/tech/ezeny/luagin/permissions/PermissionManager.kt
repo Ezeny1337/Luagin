@@ -25,7 +25,7 @@ class PermissionManager(private val plugin: Luagin, private val yamlManager: Yam
         ensureConfigFileExists()
         registerBukkitPermissions()
 
-        // 注册玩家加入事件监听器
+        // 注册玩家加入和退出事件监听器
         Bukkit.getPluginManager().registerEvents(object : org.bukkit.event.Listener {
             @org.bukkit.event.EventHandler
             fun onPlayerJoin(event: org.bukkit.event.player.PlayerJoinEvent) {
@@ -42,7 +42,6 @@ class PermissionManager(private val plugin: Luagin, private val yamlManager: Yam
     private fun ensureConfigFileExists() {
         val config = yamlManager.getConfig(configFile)
         if (config == null) {
-            // 创建默认配置文件
             val defaultConfig = """
                 groups:
                   default:
@@ -58,7 +57,6 @@ class PermissionManager(private val plugin: Luagin, private val yamlManager: Yam
                 players: {}
             """.trimIndent()
 
-            // 创建配置文件
             val file = File(plugin.dataFolder, configFile)
             file.parentFile.mkdirs()
             file.writeText(defaultConfig)
@@ -71,7 +69,7 @@ class PermissionManager(private val plugin: Luagin, private val yamlManager: Yam
     private fun registerBukkitPermissions() {
         val config = yamlManager.getConfig(configFile) ?: return
 
-        // 注册所有组权限
+        // 遍历所有权限组并注册其权限
         config.getConfigurationSection("groups")?.getKeys(false)?.forEach { groupName ->
             val permissions = config.getStringList("groups.$groupName.permissions")
             permissions.forEach { perm ->
@@ -93,7 +91,7 @@ class PermissionManager(private val plugin: Luagin, private val yamlManager: Yam
                 registeredPermissions.add(permission)
             }
         } catch (e: Exception) {
-            PLog.warning("注册权限失败: $permission", e.message ?: "未知错误")
+            PLog.severe("log.severe.register_permission_failed", permission, e.message ?: "Unknown error")
         }
     }
 
@@ -113,6 +111,39 @@ class PermissionManager(private val plugin: Luagin, private val yamlManager: Yam
         }
 
         return sender.hasPermission(permission)
+    }
+
+    /**
+     * 从配置文件中检查玩家是否拥有指定权限
+     *
+     * @param player 玩家
+     * @param permission 权限节点
+     * @return 是否拥有权限
+     */
+    fun hasPermissionFromConfig(player: Player, permission: String): Boolean {
+        val config = yamlManager.getConfig(configFile) ?: return false
+        val uuid = player.uniqueId.toString()
+
+        // 检查玩家个人权限
+        val playerPermissions = config.getStringList("players.$uuid.permissions")
+        if (playerPermissions.contains(permission)) {
+            return true
+        }
+
+        // 获取玩家所属的所有权限组（包括继承的）
+        val playerGroups = getPlayerGroups(uuid, config)
+
+        // 检查玩家所属组的权限
+        for (group in playerGroups) {
+            val groupPermissions = config.getStringList("groups.$group.permissions")
+            if (groupPermissions.contains(permission)) {
+                return true
+            }
+        }
+
+        // 检查默认组权限
+        val defaultPermissions = config.getStringList("groups.default.permissions")
+        return defaultPermissions.contains(permission)
     }
 
     /**
@@ -138,10 +169,8 @@ class PermissionManager(private val plugin: Luagin, private val yamlManager: Yam
             }
         }
 
-        // 获取玩家所属的所有权限组（包括继承的）
+        // 获取玩家所属的所有权限组并按权重排序
         val playerGroups = getPlayerGroups(uuid, config)
-
-        // 按权重排序权限组
         val sortedGroups = playerGroups.sortedByDescending { group ->
             config.getInt("groups.$group.weight", 0)
         }
@@ -173,11 +202,7 @@ class PermissionManager(private val plugin: Luagin, private val yamlManager: Yam
      */
     private fun removePlayerPermissions(player: Player) {
         playerPermissions[player.uniqueId]?.let { attachment ->
-            try {
-                player.removeAttachment(attachment)
-            } catch (e: Exception) {
-                // 忽略可能的错误
-            }
+            player.removeAttachment(attachment)
             playerPermissions.remove(player.uniqueId)
         }
     }

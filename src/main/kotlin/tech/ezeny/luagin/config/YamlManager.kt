@@ -12,11 +12,6 @@ class YamlManager(private val plugin: Luagin) {
     private val configFiles = mutableMapOf<String, File>()
 
     init {
-        // 插件配置目录
-        val pluginConfigFolder: File = File(plugin.dataFolder, "configs").apply {
-            if (!exists()) mkdirs()
-        }
-
         // 插件语言目录
         val langFolder: File = File(plugin.dataFolder, "lang").apply {
             if (!exists()) mkdirs()

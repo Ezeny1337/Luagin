@@ -4,6 +4,7 @@ import org.luaj.vm2.Globals
 import tech.ezeny.luagin.Luagin
 import tech.ezeny.luagin.lua.api.ActionBarAPI
 import tech.ezeny.luagin.lua.api.ChatAPI
+import tech.ezeny.luagin.lua.api.CommandAPI
 import tech.ezeny.luagin.lua.api.CommunicationAPI
 import tech.ezeny.luagin.lua.api.EventsAPI
 import tech.ezeny.luagin.lua.api.FilesAPI
@@ -28,7 +29,8 @@ class APIRegister(private val plugin: Luagin) {
         YamlAPI,
         CommunicationAPI,
         MySQLAPI,
-        CommonAPI
+        CommonAPI,
+        CommandAPI
     )
 
     init {

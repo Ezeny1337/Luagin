@@ -11,6 +11,7 @@ object ColorUtils {
     /**
      * 将带有颜色代码的字符串转换为 TextComponent
      * 支持 \aRRGGBB 格式的 Hex 颜色和 § 格式的原版颜色代码
+     *
      * @param text 包含颜色代码的文本
      * @return 格式化后的 TextComponent
      */
@@ -194,6 +195,7 @@ object ColorUtils {
     /**
      * 格式化字符串，将颜色代码转换为可读格式
      * 支持 \aRRGGBB 格式的 Hex 颜色和 § 格式的原版颜色代码
+     *
      * @param text 包含颜色代码的文本
      * @return 处理后的文本
      */

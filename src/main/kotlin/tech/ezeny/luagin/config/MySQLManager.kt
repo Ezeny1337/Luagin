@@ -15,14 +15,16 @@ import kotlin.time.toDuration
 
 class MySQLManager(private val plugin: Luagin, private val yamlManager: YamlManager) {
     private var dataSource: HikariDataSource? = null
+    // 缓存管理器，用于缓存查询结果
     private val cacheManager = CacheManager()
+    // 用于异步执行数据库操作的线程池
     private val executor = Executors.newFixedThreadPool(4)
 
     init {
         try {
             val config = yamlManager.getConfig("configs/mysql.yml") ?: run {
                 createDefaultConfig()
-                yamlManager.getConfig("configs/mysql.yml") ?: throw IllegalStateException("无法加载MySQL配置")
+                yamlManager.getConfig("configs/mysql.yml") ?: throw IllegalStateException("Falied to load MySQL configuration")
             }
 
             val hikariConfig = HikariConfig().apply {
@@ -47,6 +49,7 @@ class MySQLManager(private val plugin: Luagin, private val yamlManager: YamlMana
                 addDataSourceProperty("maintainTimeStats", "false")
             }
 
+            // 初始化数据库连接池
             dataSource = HikariDataSource(hikariConfig)
             testConnection()
             PLog.info("log.info.mysql_connected")
@@ -95,7 +98,12 @@ class MySQLManager(private val plugin: Luagin, private val yamlManager: YamlMana
         }
     }
 
-    // 创建表
+    /**
+     * 创建数据库表
+     *
+     * @param tableName 表名
+     * @param columns 列名和列类型的映射
+     */
     fun createTable(tableName: String, columns: Map<String, String>) {
         val columnDefinitions = columns.entries.joinToString(",\n") { (name, type) ->
             "$name $type"
@@ -115,7 +123,13 @@ class MySQLManager(private val plugin: Luagin, private val yamlManager: YamlMana
         }
     }
 
-    // 异步插入数据
+    /**
+     * 异步插入数据
+     *
+     * @param tableName 表名
+     * @param values 插入的值，键为列名，值为对应的列值
+     * @param callback 插入成功后的回调，返回插入的 ID
+     */
     fun insert(tableName: String, values: Map<String, Any>, callback: ((Int) -> Unit)? = null) {
         val cacheKey = "$tableName:${values.values.joinToString(":")}"
 
@@ -157,7 +171,15 @@ class MySQLManager(private val plugin: Luagin, private val yamlManager: YamlMana
         }
     }
 
-    // 更新数据
+    /**
+     * 更新数据
+     *
+     * @param tableName 表名
+     * @param values 要更新的列和值
+     * @param where 更新条件
+     * @param whereArgs 更新条件的参数
+     * @param callback 更新后的回调，返回受影响的行数
+     */
     fun update(
         tableName: String,
         values: Map<String, Any>,
@@ -208,7 +230,15 @@ class MySQLManager(private val plugin: Luagin, private val yamlManager: YamlMana
         })
     }
 
-    // 异步查询数据
+    /**
+     * 异步查询数据
+     *
+     * @param tableName 表名
+     * @param columns 查询的列
+     * @param where 查询的条件
+     * @param whereArgs 查询条件的参数
+     * @param callback 查询结果的回调，返回查询到的结果集
+     */
     fun query(
         tableName: String,
         columns: List<String> = listOf("*"),

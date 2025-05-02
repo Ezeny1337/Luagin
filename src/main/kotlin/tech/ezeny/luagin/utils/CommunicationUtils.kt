@@ -12,6 +12,7 @@ object CommunicationUtils {
 
     /**
      * 暴露函数
+     *
      * @param functionName 函数名
      * @param function 函数对象
      * @return 是否成功
@@ -33,6 +34,7 @@ object CommunicationUtils {
 
     /**
      * 取消暴露函数
+     *
      * @param functionName 函数名
      * @return 是否成功
      */
@@ -53,6 +55,7 @@ object CommunicationUtils {
 
     /**
      * 调用函数
+     *
      * @param scriptName 目标脚本名
      * @param functionName 函数名
      * @param args 参数
@@ -89,6 +92,7 @@ object CommunicationUtils {
 
     /**
      * 获取所有暴露的函数
+     *
      * @return 包含所有暴露函数信息的Lua表
      */
     fun getExposedFunctions(): LuaTable {
@@ -114,6 +118,7 @@ object CommunicationUtils {
 
     /**
      * 清除指定脚本的所有暴露函数
+     *
      * @param scriptName 脚本名
      */
     fun clearScriptFunctions(scriptName: String) {

@@ -1,5 +1,6 @@
 package tech.ezeny.luagin.lua
 
+import org.bukkit.command.CommandSender
 import org.bukkit.event.Cancellable
 import org.bukkit.event.Event
 import org.luaj.vm2.LuaTable
@@ -18,6 +19,9 @@ object LuaValueFactory {
     // 缓存 Event 到 LuaUserdata 的映射
     private val eventLuaCache = WeakHashMap<Event, LuaValue>()
 
+    // 缓存 CommandSender 到 LuaUserdata 的映射
+    private val commandSenderLuaCache = WeakHashMap<CommandSender, LuaValue>()
+
     // 缓存 Class 到 Metatable 的映射
     private val metatableCache = mutableMapOf<Class<*>, LuaTable>()
 
@@ -27,7 +31,6 @@ object LuaValueFactory {
 
     /**
      * 将 Java 对象转换为 LuaValue
-     * 目前仅 Bukkit Event 类型
      *
      * @param obj 需要转换的 Java 对象
      * @return 转换后的 LuaValue
@@ -35,23 +38,24 @@ object LuaValueFactory {
     fun createLuaValue(obj: Any?): LuaValue {
         if (obj == null) return LuaValue.NIL
 
-        // 为 Bukkit Event 创建自定义 Userdata
+        // 创建自定义 Userdata
         return when (obj) {
             is Event -> eventLuaCache.getOrPut(obj) { createCustomUserdata(obj) }
+            is CommandSender -> commandSenderLuaCache.getOrPut(obj) { createCustomUserdata(obj) }
             else -> CoerceJavaToLua.coerce(obj)
         }
     }
 
     /**
-     * 为指定的 Event 创建自定义 LuaUserdata，并设置元表
+     * 为指定的 Java 对象创建自定义 LuaUserdata，并设置元表
      *
-     * @param event Bukkit 事件对象
+     * @param obj Java 对象
      * @return 包装后的 LuaUserdata
      */
-    private fun createCustomUserdata(event: Event): LuaUserdata {
-        val userdata = LuaUserdata(event)
-        val metatable = metatableCache.getOrPut(event.javaClass) {
-            createMetatable(event.javaClass)
+    private fun createCustomUserdata(obj: Any): LuaUserdata {
+        val userdata = LuaUserdata(obj)
+        val metatable = metatableCache.getOrPut(obj.javaClass) {
+            createMetatable(obj.javaClass)
         }
         userdata.setmetatable(metatable)
         return userdata
@@ -59,7 +63,7 @@ object LuaValueFactory {
 
     /**
      * 为 Java 类生成 Lua 用的元表
-     * 自动绑定 getter/setter 访问，支持 cancelled 特判
+     * 自动绑定 getter/setter 访问
      *
      * @param clazz Java 类对象
      * @return 构建好的 LuaTable
@@ -67,7 +71,7 @@ object LuaValueFactory {
     private fun createMetatable(clazz: Class<*>): LuaTable {
         val metatable = LuaTable()
 
-        // 缓存 getter/setter
+        // 获取 getter/setter
         val getters = getGetterMethods(clazz)
         val setters = getSetterMethods(clazz)
 
@@ -75,21 +79,58 @@ object LuaValueFactory {
             override fun invoke(args: Varargs): Varargs {
                 val self = args.arg1()
                 val key = args.arg(2).tojstring()
+
+                // 在 key 包含下划线时进行转换尝试
+                val camelCaseKey = if (key.contains('_')) snakeToCamel(key) else key
+
                 val javaObject = self.checkuserdata(Any::class.java) ?: return NIL
+
+                // 尝试使用驼峰命名法访问方法
+                val method = getters[camelCaseKey]
 
                 // Cancellable 特判
                 if (key == "cancelled" && javaObject is Cancellable)
                     return valueOf(javaObject.isCancelled)
 
-                val method = getters[key]
                 return try {
                     if (method != null) {
                         createLuaValue(method.invoke(javaObject))
                     } else {
-                        NIL
+                        // 如果没有找到 getter, 尝试查找同名方法
+                        val methodName = camelCaseKey
+                        val methods = clazz.methods.filter { it.name.equals(methodName, ignoreCase = true) }
+                        if (methods.isNotEmpty()) {
+                            object : VarArgFunction() {
+                                override fun invoke(callArgs: Varargs): Varargs {
+                                    // 第一个参数是self
+                                    val callSelf = callArgs.arg1()
+                                    val callJavaObject = callSelf.checkuserdata(Any::class.java) ?: return NIL
+
+                                    // 尝试找到匹配的方法
+                                    for (method in methods) {
+                                        try {
+                                            val paramCount = method.parameterCount
+                                            if (callArgs.narg() - 1 == paramCount) {  // -1 是因为第一个参数是self
+                                                val javaArgs = Array(paramCount) { i ->
+                                                    val luaArg = callArgs.arg(i + 2)  // +2 是因为arg索引从1开始, 且跳过self
+                                                    coerceLuaToJava(luaArg, method.parameterTypes[i])
+                                                }
+                                                val result = method.invoke(callJavaObject, *javaArgs)
+                                                return createLuaValue(result)
+                                            }
+                                        } catch (e: Exception) {
+                                            // 继续尝试下一个方法
+                                        }
+                                    }
+                                    return NIL
+                                }
+                            }
+                        } else {
+                            NIL
+                        }
                     }
                 } catch (e: Exception) {
-                    PLog.warning("log.warning.getter_failed", key, e.message ?: "Unknown error")
+                    PLog.warning("log.warning.getter_failed", camelCaseKey, e.message ?: "Unknown error")
                     NIL
                 }
             }
@@ -100,7 +141,12 @@ object LuaValueFactory {
                 val self = args.arg1()
                 val key = args.arg(2).tojstring()
                 val value = args.arg(3)
+
+                val camelCaseKey = if (key.contains('_')) snakeToCamel(key) else key
+
                 val javaObject = self.checkuserdata(Any::class.java) ?: return NIL
+
+                val method = setters[camelCaseKey]
 
                 // 特殊处理 Cancellable 的 cancelled 字段
                 if (key == "cancelled" && javaObject is Cancellable) {
@@ -108,7 +154,6 @@ object LuaValueFactory {
                     return NIL
                 }
 
-                val method = setters[key]
                 return try {
                     if (method != null) {
                         val paramType = method.parameterTypes[0]
@@ -119,7 +164,7 @@ object LuaValueFactory {
                     }
                     NIL
                 } catch (e: Exception) {
-                    PLog.warning("log.warning.setter_failed", key, e.message ?: "Unknown error")
+                    PLog.warning("log.warning.setter_failed", camelCaseKey, e.message ?: "Unknown error")
                     NIL
                 }
             }
@@ -146,7 +191,9 @@ object LuaValueFactory {
         return getterCache.getOrPut(clazz) {
             clazz.methods
                 .filter { it.parameterCount == 0 && (it.name.startsWith("get") || it.name.startsWith("is")) }
-                .associateBy { it.name.removePrefix("get").removePrefix("is").replaceFirstChar { c -> c.lowercaseChar() } }
+                .associateBy {
+                    it.name.removePrefix("get").removePrefix("is").replaceFirstChar { c -> c.lowercaseChar() }
+                }
         }
     }
 
@@ -184,5 +231,15 @@ object LuaValueFactory {
             value.isuserdata() && targetType.isAssignableFrom(value.touserdata()::class.java) -> value.touserdata()
             else -> null
         }
+    }
+
+    /**
+     * 将蛇形命名法转换为驼峰命名法
+     */
+    private fun snakeToCamel(snake: String): String {
+        return snake.split('_').mapIndexed { index, part ->
+            if (index == 0) part
+            else part.replaceFirstChar { it.uppercaseChar() }
+        }.joinToString("")
     }
 }
