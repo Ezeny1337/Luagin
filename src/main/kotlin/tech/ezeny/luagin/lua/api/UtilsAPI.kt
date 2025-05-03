@@ -1,18 +1,18 @@
 package tech.ezeny.luagin.lua.api
 
 import org.bukkit.Bukkit
-import org.bukkit.plugin.java.JavaPlugin
 import org.luaj.vm2.Globals
 import org.luaj.vm2.LuaTable
 import org.luaj.vm2.Varargs
 import org.luaj.vm2.lib.VarArgFunction
+import tech.ezeny.luagin.Luagin
 import tech.ezeny.luagin.utils.PLog
 
 object UtilsAPI : LuaAPIProvider {
-    private lateinit var plugin: JavaPlugin
+    private lateinit var plugin: Luagin
     private val apiNames = mutableListOf<String>()
 
-    override fun initialize(plugin: JavaPlugin) {
+    override fun initialize(plugin: Luagin) {
         this.plugin = plugin
     }
 
@@ -20,27 +20,6 @@ object UtilsAPI : LuaAPIProvider {
         // 创建 utils 表
         val utilsTable = LuaTable()
         globals.set("utils", utilsTable)
-
-        // 注册 command_exec 函数
-        utilsTable.set("command_exec", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 1 || !args.arg(1).isstring()) {
-                    return NIL
-                }
-
-                val command = args.checkjstring(1)
-
-                runOnMainThread {
-                    try {
-                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command)
-                    } catch (e: Exception) {
-                        PLog.warning("log.warning.command_exec_failed", command, e.message ?: "Unknown error")
-                    }
-                }
-
-                return NIL
-            }
-        })
 
         // 注册 execute_after 函数
         utilsTable.set("execute_after", object : VarArgFunction() {
@@ -83,8 +62,4 @@ object UtilsAPI : LuaAPIProvider {
     }
 
     override fun getAPINames(): List<String> = apiNames
-
-    private fun runOnMainThread(runnable: Runnable) {
-        Bukkit.getScheduler().runTask(plugin, runnable)
-    }
 }

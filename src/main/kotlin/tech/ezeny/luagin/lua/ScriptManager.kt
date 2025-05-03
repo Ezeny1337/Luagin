@@ -52,8 +52,11 @@ class ScriptManager(
     }
 
     fun reloadAllScripts(): Int {
+        // 清理事件处理器
         eventManager.clearHandlers()
+        // 清理共享函数
         CommunicationUtils.clearAllFunctions()
+
         return loadAllScripts()
     }
 
@@ -99,11 +102,12 @@ class ScriptManager(
             return false
         }
 
-        // 清理之前的事件处理器
+        // 清理事件处理器
         eventManager.clearHandlersForScript(scriptFile.name)
         // 清理共享函数和环境
         CommunicationUtils.clearScriptFunctions(scriptFile.name)
         scriptEnvironments.remove(scriptFile.absolutePath)
+
         return loadScript(scriptFile)
     }
 

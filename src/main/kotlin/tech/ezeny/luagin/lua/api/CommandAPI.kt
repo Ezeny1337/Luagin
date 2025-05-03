@@ -1,18 +1,25 @@
 package tech.ezeny.luagin.lua.api
 
+import org.bukkit.Bukkit
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.luaj.vm2.Globals
 import org.luaj.vm2.LuaTable
 import org.luaj.vm2.Varargs
 import org.luaj.vm2.lib.VarArgFunction
+import tech.ezeny.luagin.Luagin
 import tech.ezeny.luagin.commands.CommandManager
 import tech.ezeny.luagin.commands.LuaCommand
 import tech.ezeny.luagin.utils.PLog
 
 object CommandAPI : LuaAPIProvider, KoinComponent {
+    private lateinit var plugin: Luagin
     private val commandManager: CommandManager by inject()
     private val apiNames = mutableListOf<String>()
+
+    override fun initialize(plugin: Luagin) {
+        this.plugin = plugin
+    }
 
     override fun registerAPI(globals: Globals) {
         // 创建 command 表
@@ -22,7 +29,9 @@ object CommandAPI : LuaAPIProvider, KoinComponent {
         // 注册命令
         commandTable.set("register", object : VarArgFunction() {
             override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 3 || !args.arg(1).isstring() || !args.arg(2).isstring() || !args.arg(3).isfunction()) {
+                if (args.narg() < 3 || !args.arg(1).isstring() || !args.arg(2).isstring() || !args.arg(3)
+                        .isfunction()
+                ) {
                     return NIL
                 }
 
@@ -31,10 +40,31 @@ object CommandAPI : LuaAPIProvider, KoinComponent {
                 val handler = args.checkfunction(3)
 
                 val command = commandManager.registerCommand(commandName, permission, handler)
-                
+
                 // 创建 Lua 命令包装器
                 val luaCommand = LuaCommandWrapper(command)
                 return luaCommand
+            }
+        })
+
+        // 注册 exec 函数
+        commandTable.set("exec", object : VarArgFunction() {
+            override fun invoke(args: Varargs): Varargs {
+                if (args.narg() < 1 || !args.arg(1).isstring()) {
+                    return FALSE
+                }
+
+                val command = args.checkjstring(1)
+
+                runOnMainThread {
+                    try {
+                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command)
+                    } catch (e: Exception) {
+                        PLog.warning("log.warning.command_exec_failed", command, e.message ?: "Unknown error")
+                    }
+                }
+
+                return FALSE
             }
         })
 
@@ -75,7 +105,7 @@ object CommandAPI : LuaAPIProvider, KoinComponent {
                         }
                         i++
                     }
-                    
+
                     // 检查是否提供了权限参数
                     val permission = if (args.narg() > 3 && args.arg(4).isstring()) {
                         args.checkjstring(4)
@@ -87,12 +117,14 @@ object CommandAPI : LuaAPIProvider, KoinComponent {
                     return this@LuaCommandWrapper
                 }
             })
-            
+
             // 添加命令参数提示（指定前置参数）
             set("add_args_for", object : VarArgFunction() {
                 override fun invoke(args: Varargs): Varargs {
                     // 第一个参数是 self
-                    if (args.narg() < 4 || !args.arg(2).isnumber() || !args.arg(3).isstring() || !args.arg(4).istable()) {
+                    if (args.narg() < 4 || !args.arg(2).isnumber() || !args.arg(3).isstring() || !args.arg(4)
+                            .istable()
+                    ) {
                         return this@LuaCommandWrapper
                     }
 
@@ -111,7 +143,7 @@ object CommandAPI : LuaAPIProvider, KoinComponent {
                         }
                         i++
                     }
-                    
+
                     // 检查是否提供了权限参数
                     val permission = if (args.narg() > 4 && args.arg(5).isstring()) {
                         args.checkjstring(5)
@@ -124,5 +156,9 @@ object CommandAPI : LuaAPIProvider, KoinComponent {
                 }
             })
         }
+    }
+
+    private fun runOnMainThread(runnable: Runnable) {
+        Bukkit.getScheduler().runTask(plugin, runnable)
     }
 }

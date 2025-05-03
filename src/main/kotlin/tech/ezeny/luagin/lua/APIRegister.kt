@@ -9,7 +9,7 @@ import tech.ezeny.luagin.lua.api.CommunicationAPI
 import tech.ezeny.luagin.lua.api.EventsAPI
 import tech.ezeny.luagin.lua.api.FilesAPI
 import tech.ezeny.luagin.lua.api.MySQLAPI
-import tech.ezeny.luagin.lua.api.CommonAPI
+import tech.ezeny.luagin.lua.api.PermissionAPI
 import tech.ezeny.luagin.lua.api.TitleAPI
 import tech.ezeny.luagin.lua.api.UtilsAPI
 import tech.ezeny.luagin.lua.api.YamlAPI
@@ -29,7 +29,7 @@ class APIRegister(private val plugin: Luagin) {
         YamlAPI,
         CommunicationAPI,
         MySQLAPI,
-        CommonAPI,
+        PermissionAPI,
         CommandAPI
     )
 

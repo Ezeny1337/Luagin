@@ -8,8 +8,6 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import tech.ezeny.luagin.i18n.I18n
 import tech.ezeny.luagin.lua.ScriptManager
-import tech.ezeny.luagin.utils.PLog
-import java.io.File
 
 class LuaginCommandExecutor : CommandExecutor, TabCompleter, KoinComponent {
     private val scriptManager: ScriptManager by inject()
