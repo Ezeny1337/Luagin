@@ -136,7 +136,7 @@ class ScriptManager(
         }
     }
 
-    fun getLoadedScriptNames(): List<String> {
+    fun listScripts(): List<String> {
         return scriptsFolder.listFiles { file ->
             file.isFile && file.extension == "lua"
         }?.map { it.name } ?: emptyList()

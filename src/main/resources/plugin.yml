@@ -1,5 +1,5 @@
 name: Luagin
-version: '1.0-SNAPSHOT'
+version: '1.0'
 main: tech.ezeny.luagin.Luagin
 api-version: '1.21'
 authors: [Ezeny]
