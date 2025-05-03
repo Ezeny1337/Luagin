@@ -56,7 +56,7 @@ class LuaCommand(
                     // 否则使用前一个参数的权限
                     val prevArgPermission =
                         commandManager.getArgumentPermission(name, i, previousArg, if (i > 1) args[i - 2] else "")
-                    argPermission = if (prevArgPermission.isEmpty()) requiredPermission else prevArgPermission
+                    argPermission = prevArgPermission.ifEmpty { requiredPermission }
                 }
             }
 

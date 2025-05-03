@@ -1,19 +1,19 @@
 package tech.ezeny.luagin.lua.api
 
-import org.bukkit.plugin.java.JavaPlugin
 import org.luaj.vm2.Globals
 import org.luaj.vm2.LuaTable
 import org.luaj.vm2.Varargs
 import org.luaj.vm2.lib.VarArgFunction
+import tech.ezeny.luagin.Luagin
 import tech.ezeny.luagin.utils.PLog
 import java.io.File
 import java.io.IOException
 
 object FilesAPI : LuaAPIProvider {
-    private lateinit var plugin: JavaPlugin
+    private lateinit var plugin: Luagin
     private val apiNames = mutableListOf<String>()
 
-    override fun initialize(plugin: JavaPlugin) {
+    override fun initialize(plugin: Luagin) {
         this.plugin = plugin
     }
 

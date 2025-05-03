@@ -51,7 +51,7 @@ object LanguageUtils {
             enConfig.set("log.info.comm_api_set", "Comm API has been set")
             enConfig.set("log.info.mysql_api_set", "MySQL API has been set")
             enConfig.set("log.info.command_api_set", "Command API has been set")
-            enConfig.set("log.info.common", "Common API has been set")
+            enConfig.set("log.info.permission", "Permission API has been set")
 
             // 警告级别消息
             enConfig.set("log.warning.event_not_found", "Event class {0}.{1} not found")
@@ -156,7 +156,7 @@ object LanguageUtils {
             zhConfig.set("log.info.comm_api_set", "Comm API 已设置")
             zhConfig.set("log.info.mysql_api_set", "MySQL API 已设置")
             zhConfig.set("log.info.command_api_set", "Command API 已设置")
-            zhConfig.set("log.info.common_api_set", "Common API 已设置")
+            zhConfig.set("log.info.permission_api_set", "Permission API 已设置")
 
             zhConfig.set("log.warning.event_not_found", "找不到事件类 {0}.{1}")
             zhConfig.set("log.warning.register_event_handler_failed", "注册事件处理器失败: {0}")

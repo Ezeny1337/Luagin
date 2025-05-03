@@ -10,62 +10,62 @@ import org.luaj.vm2.lib.VarArgFunction
 import tech.ezeny.luagin.permissions.PermissionManager
 import tech.ezeny.luagin.utils.PLog
 
-object CommonAPI : LuaAPIProvider, KoinComponent {
+object PermissionAPI : LuaAPIProvider, KoinComponent {
     private val permissionManager: PermissionManager by inject()
     private val apiNames = mutableListOf<String>()
 
     override fun registerAPI(globals: Globals) {
-        // 创建 common 表
-        val commonTable = LuaTable()
-        globals.set("common", commonTable)
+        // 创建 permission 表
+        val permissionTable = LuaTable()
+        globals.set("permission", permissionTable)
 
         // 检查权限
-        commonTable.set("has_permission", object : VarArgFunction() {
+        permissionTable.set("player_check", object : VarArgFunction() {
             override fun invoke(args: Varargs): Varargs {
                 if (args.narg() < 2 || !args.arg(1).isstring() || !args.arg(2).isstring()) {
-                    return valueOf(false)
+                    return FALSE
                 }
 
                 val playerName = args.checkjstring(1)
                 val permission = args.checkjstring(2)
 
-                val player = Bukkit.getPlayer(playerName) ?: return valueOf(false)
+                val player = Bukkit.getPlayer(playerName) ?: return FALSE
                 return valueOf(player.hasPermission(permission))
             }
         })
 
         // 添加权限
-        commonTable.set("add_permission", object : VarArgFunction() {
+        permissionTable.set("player_add", object : VarArgFunction() {
             override fun invoke(args: Varargs): Varargs {
                 if (args.narg() < 2 || !args.arg(1).isstring() || !args.arg(2).isstring()) {
-                    return valueOf(false)
+                    return FALSE
                 }
 
                 val playerName = args.checkjstring(1)
                 val permission = args.checkjstring(2)
 
-                val player = Bukkit.getPlayer(playerName) ?: return valueOf(false)
+                val player = Bukkit.getPlayer(playerName) ?: return FALSE
                 return valueOf(permissionManager.addPermission(player, permission))
             }
         })
 
         // 移除权限
-        commonTable.set("remove_permission", object : VarArgFunction() {
+        permissionTable.set("player_remove", object : VarArgFunction() {
             override fun invoke(args: Varargs): Varargs {
                 if (args.narg() < 2 || !args.arg(1).isstring() || !args.arg(2).isstring()) {
-                    return valueOf(false)
+                    return FALSE
                 }
 
                 val playerName = args.checkjstring(1)
                 val permission = args.checkjstring(2)
 
-                val player = Bukkit.getPlayer(playerName) ?: return valueOf(false)
+                val player = Bukkit.getPlayer(playerName) ?: return FALSE
                 return valueOf(permissionManager.removePermission(player, permission))
             }
         })
 
         // 获取玩家所有权限
-        commonTable.set("get_player_permissions", object : VarArgFunction() {
+        permissionTable.set("get_player_permissions", object : VarArgFunction() {
             override fun invoke(args: Varargs): Varargs {
                 if (args.narg() < 1 || !args.arg(1).isstring()) {
                     return NIL
@@ -90,10 +90,10 @@ object CommonAPI : LuaAPIProvider, KoinComponent {
         })
 
         // 添加权限组
-        commonTable.set("add_group", object : VarArgFunction() {
+        permissionTable.set("add_group", object : VarArgFunction() {
             override fun invoke(args: Varargs): Varargs {
                 if (args.narg() < 2 || !args.arg(1).isstring() || !args.arg(2).istable()) {
-                    return valueOf(false)
+                    return FALSE
                 }
 
                 val groupName = args.checkjstring(1)
@@ -137,7 +137,7 @@ object CommonAPI : LuaAPIProvider, KoinComponent {
         })
 
         // 获取权限组信息
-        commonTable.set("get_group_info", object : VarArgFunction() {
+        permissionTable.set("get_group_info", object : VarArgFunction() {
             override fun invoke(args: Varargs): Varargs {
                 if (args.narg() < 1 || !args.arg(1).isstring()) {
                     return NIL
@@ -171,7 +171,7 @@ object CommonAPI : LuaAPIProvider, KoinComponent {
         })
 
         // 获取权限组权重
-        commonTable.set("get_group_weight", object : VarArgFunction() {
+        permissionTable.set("get_group_weight", object : VarArgFunction() {
             override fun invoke(args: Varargs): Varargs {
                 if (args.narg() < 1 || !args.arg(1).isstring()) {
                     return valueOf(0)
@@ -183,7 +183,7 @@ object CommonAPI : LuaAPIProvider, KoinComponent {
         })
 
         // 设置权限组权重
-        commonTable.set("set_group_weight", object : VarArgFunction() {
+        permissionTable.set("set_group_weight", object : VarArgFunction() {
             override fun invoke(args: Varargs): Varargs {
                 if (args.narg() < 2 || !args.arg(1).isstring() || !args.arg(2).isnumber()) {
                     return valueOf(false)
@@ -197,7 +197,7 @@ object CommonAPI : LuaAPIProvider, KoinComponent {
         })
 
         // 设置权限组继承关系
-        commonTable.set("set_group_inherit", object : VarArgFunction() {
+        permissionTable.set("set_group_inherit", object : VarArgFunction() {
             override fun invoke(args: Varargs): Varargs {
                 if (args.narg() < 2 || !args.arg(1).isstring() || !args.arg(2).istable()) {
                     return valueOf(false)
@@ -222,7 +222,7 @@ object CommonAPI : LuaAPIProvider, KoinComponent {
         })
 
         // 将玩家添加到权限组
-        commonTable.set("add_player_group", object : VarArgFunction() {
+        permissionTable.set("add_player_group", object : VarArgFunction() {
             override fun invoke(args: Varargs): Varargs {
                 if (args.narg() < 2 || !args.arg(1).isstring() || !args.arg(2).isstring()) {
                     return valueOf(false)
@@ -237,7 +237,7 @@ object CommonAPI : LuaAPIProvider, KoinComponent {
         })
 
         // 将玩家从权限组移除
-        commonTable.set("remove_player_group", object : VarArgFunction() {
+        permissionTable.set("remove_player_group", object : VarArgFunction() {
             override fun invoke(args: Varargs): Varargs {
                 if (args.narg() < 2 || !args.arg(1).isstring() || !args.arg(2).isstring()) {
                     return valueOf(false)
@@ -252,7 +252,7 @@ object CommonAPI : LuaAPIProvider, KoinComponent {
         })
 
         // 获取玩家所属的所有权限组
-        commonTable.set("get_player_groups", object : VarArgFunction() {
+        permissionTable.set("get_player_groups", object : VarArgFunction() {
             override fun invoke(args: Varargs): Varargs {
                 if (args.narg() < 1 || !args.arg(1).isstring()) {
                     return NIL
@@ -277,11 +277,11 @@ object CommonAPI : LuaAPIProvider, KoinComponent {
         })
 
         // 添加到 API 名称列表
-        if (!apiNames.contains("common")) {
-            apiNames.add("common")
+        if (!apiNames.contains("permission")) {
+            apiNames.add("permission")
         }
 
-        PLog.info("log.info.common_api_set")
+        PLog.info("log.info.permission_api_set")
     }
 
     override fun getAPINames(): List<String> = apiNames
