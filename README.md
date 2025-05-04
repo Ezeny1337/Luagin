@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  🌐 <a href="./README.md">English</a>
+  🌐 <a href="./README.md">English</a> | <a href="./README_zh.md">中文</a>
 </p>
 
 ---
@@ -33,7 +33,7 @@
 ### ❓ Why Lua
 
 1. **Easy to learn**: Lua is a **lightweight, simple yet powerful** scripting language. Even beginners can quickly get started with it.
-2. **Efficient**: With Luagin, you **don't need** to build and manage **complex projects**, write **extensive boilerplate code**, or navigate through **hard-to-read APIs** like you would when developing Java plugins.
+2. **Efficient**: With Luagin, you **don't need** to build and manage **complex projects**, write **extensive boilerplate code**, or navigate through **hard-to-read APIs**, like you would when developing Java plugins.
 3. **Hot update**: **Reloading** scripts takes effect immediately, greatly improving the development experience and reducing the cost of trial and error.
 4. **Security**: Lua scripts run in a **controlled environment**, making it highly unlikely for them to crash the server or cause other serious issues.
 5. **Inter-script communication**: You can **call functions** between Lua scripts through Luagin. This means that it is competent for **large and complex** plugin development, and even more modular.
