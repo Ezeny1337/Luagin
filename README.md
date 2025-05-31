@@ -42,6 +42,10 @@
 
 https://ezeny.gitbook.io/luagin-docs
 
+    Due to insufficient time, the document currently only contains necessary
+    information, which means you need to search for relevant information about
+    some classes and their methods in Bukkit's documentation.
+
 ## 🛠️ Support
 
 If you want to report bugs or suggest new features, you can [open an issue on Github](https://github.com/Ezeny1337/Luagin/issues).
