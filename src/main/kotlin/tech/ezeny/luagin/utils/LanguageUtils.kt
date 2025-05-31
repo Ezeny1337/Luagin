@@ -52,6 +52,7 @@ object LanguageUtils {
             enConfig.set("log.info.mysql_api_set", "MySQL API has been set")
             enConfig.set("log.info.command_api_set", "Command API has been set")
             enConfig.set("log.info.permission", "Permission API has been set")
+            enConfig.set("log.info.network_api_set", "Network API has been set")
 
             // 警告级别消息
             enConfig.set("log.warning.event_not_found", "Event class {0}.{1} not found")
@@ -87,6 +88,7 @@ object LanguageUtils {
             enConfig.set("log.warning.execute_command_failed", "Failed to execute command /{0}: {1}")
             enConfig.set("log.warning.method_not_match", "No matching method overload: {0}")
             enConfig.set("log.warning.method_not_found", "Method not found: {0}")
+            enConfig.set("log.warning.network_request_failed", "Failed to send network request to {0}: {1}")
 
             // 严重级别消息
             enConfig.set("log.severe.copy_shared_api_failed", "Shared API: {0} is nil in the main environment")
@@ -157,6 +159,7 @@ object LanguageUtils {
             zhConfig.set("log.info.mysql_api_set", "MySQL API 已设置")
             zhConfig.set("log.info.command_api_set", "Command API 已设置")
             zhConfig.set("log.info.permission_api_set", "Permission API 已设置")
+            zhConfig.set("log.info.network_api_set", "Network API 已设置")
 
             zhConfig.set("log.warning.event_not_found", "找不到事件类 {0}.{1}")
             zhConfig.set("log.warning.register_event_handler_failed", "注册事件处理器失败: {0}")
@@ -185,6 +188,7 @@ object LanguageUtils {
             zhConfig.set("log.warning.execute_command_failed", "执行命令 /{0} 失败: {1}")
             zhConfig.set("log.warning.method_not_match", "没有匹配的方法重载: {0}")
             zhConfig.set("log.warning.method_not_found", "找不到方法: {0}")
+            zhConfig.set("log.warning.network_request_failed", "发送网络请求到 {0} 失败: {1}")
 
             // 严重级别消息
             zhConfig.set("log.severe.copy_shared_api_failed", "共享 API: {0} 在主环境为 nil")

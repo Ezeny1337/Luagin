@@ -11,6 +11,7 @@ import tech.ezeny.luagin.i18n.I18n
 import tech.ezeny.luagin.lua.APIRegister
 import tech.ezeny.luagin.lua.LuaEnvManager
 import tech.ezeny.luagin.lua.ScriptManager
+import tech.ezeny.luagin.network.NetworkManager
 import tech.ezeny.luagin.permissions.PermissionManager
 
 val pluginModules = module {
@@ -18,6 +19,7 @@ val pluginModules = module {
 
     single { YamlManager(get()) }
     single { I18n(get()) }
+    single { NetworkManager(get()) }
     single { PermissionManager(get(), get()) }
     single { CommandManager(get(), get()) }
     single { MySQLManager(get(), get()) }
@@ -30,6 +32,7 @@ val pluginModules = module {
 fun getKoinModules() {
     getKoin().get<YamlManager>()
     getKoin().get<I18n>()
+    getKoin().get<NetworkManager>()
     getKoin().get<PermissionManager>()
     getKoin().get<CommandManager>()
     getKoin().get<MySQLManager>()
