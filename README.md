@@ -5,7 +5,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Language-Kotlin-orange?logo=kotlin" />
   <img src="https://img.shields.io/badge/License-Apache%202.0-blue" />
-  <img src="https://img.shields.io/github/v/release/Ezeny1337/Luagin" />
+  <img src="https://img.shields.io/github/v/release/Ezeny1337/Luagin?label=Release&color=green" />
 </p>
 
 <p align="center">
