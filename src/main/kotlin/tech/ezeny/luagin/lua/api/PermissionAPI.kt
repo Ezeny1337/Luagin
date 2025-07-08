@@ -3,10 +3,7 @@ package tech.ezeny.luagin.lua.api
 import org.bukkit.Bukkit
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import org.luaj.vm2.Globals
-import org.luaj.vm2.LuaTable
-import org.luaj.vm2.Varargs
-import org.luaj.vm2.lib.VarArgFunction
+import party.iroiro.luajava.Lua
 import tech.ezeny.luagin.permissions.PermissionManager
 import tech.ezeny.luagin.utils.PLog
 
@@ -14,271 +11,347 @@ object PermissionAPI : LuaAPIProvider, KoinComponent {
     private val permissionManager: PermissionManager by inject()
     private val apiNames = mutableListOf<String>()
 
-    override fun registerAPI(globals: Globals) {
-        // 创建 permission 表
-        val permissionTable = LuaTable()
-        globals.set("permission", permissionTable)
+    override fun registerAPI(lua: Lua) {
+        // 创建 perm 表
+        lua.newTable()
 
         // 检查权限
-        permissionTable.set("player_check", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 2 || !args.arg(1).isstring() || !args.arg(2).isstring()) {
-                    return FALSE
-                }
-
-                val playerName = args.checkjstring(1)
-                val permission = args.checkjstring(2)
-
-                val player = Bukkit.getPlayer(playerName) ?: return FALSE
-                return valueOf(player.hasPermission(permission))
+        lua.push { luaState ->
+            if (luaState.top < 2) {
+                luaState.push(false)
+                return@push 1
             }
-        })
+
+            val playerName = luaState.toString(1) ?: ""
+            val permission = luaState.toString(2) ?: ""
+
+            val player = Bukkit.getPlayer(playerName)
+            if (player == null) {
+                luaState.push(false)
+                return@push 1
+            }
+
+            luaState.push(player.hasPermission(permission))
+            return@push 1
+        }
+        lua.setField(-2, "player_check")
 
         // 添加权限
-        permissionTable.set("player_add", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 2 || !args.arg(1).isstring() || !args.arg(2).isstring()) {
-                    return FALSE
-                }
-
-                val playerName = args.checkjstring(1)
-                val permission = args.checkjstring(2)
-
-                val player = Bukkit.getPlayer(playerName) ?: return FALSE
-                return valueOf(permissionManager.addPermission(player, permission))
+        lua.push { luaState ->
+            if (luaState.top < 2) {
+                luaState.push(false)
+                return@push 1
             }
-        })
+
+            val playerName = luaState.toString(1) ?: ""
+            val permission = luaState.toString(2) ?: ""
+
+            val player = Bukkit.getPlayer(playerName)
+            if (player == null) {
+                luaState.push(false)
+                return@push 1
+            }
+
+            luaState.push(permissionManager.addPermission(player, permission))
+            return@push 1
+        }
+        lua.setField(-2, "player_add")
 
         // 移除权限
-        permissionTable.set("player_remove", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 2 || !args.arg(1).isstring() || !args.arg(2).isstring()) {
-                    return FALSE
-                }
-
-                val playerName = args.checkjstring(1)
-                val permission = args.checkjstring(2)
-
-                val player = Bukkit.getPlayer(playerName) ?: return FALSE
-                return valueOf(permissionManager.removePermission(player, permission))
+        lua.push { luaState ->
+            if (luaState.top < 2) {
+                luaState.push(false)
+                return@push 1
             }
-        })
+
+            val playerName = luaState.toString(1) ?: ""
+            val permission = luaState.toString(2) ?: ""
+
+            val player = Bukkit.getPlayer(playerName)
+            if (player == null) {
+                luaState.push(false)
+                return@push 1
+            }
+
+            luaState.push(permissionManager.removePermission(player, permission))
+            return@push 1
+        }
+        lua.setField(-2, "player_remove")
 
         // 获取玩家所有权限
-        permissionTable.set("get_player_permissions", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 1 || !args.arg(1).isstring()) {
-                    return NIL
-                }
-
-                val playerName = args.checkjstring(1)
-                val player = Bukkit.getPlayer(playerName) ?: return NIL
-
-                val config = permissionManager.getConfig() ?: return NIL
-                val uuid = player.uniqueId.toString()
-                val path = "players.$uuid.permissions"
-                
-                if (!config.contains(path)) return NIL
-                
-                val permissions = config.getStringList(path)
-                val result = LuaTable()
-                permissions.forEachIndexed { index, permission ->
-                    result.set(index + 1, valueOf(permission))
-                }
-                return result
+        lua.push { luaState ->
+            if (luaState.top < 1) {
+                luaState.pushNil()
+                return@push 1
             }
-        })
+
+            val playerName = luaState.toString(1) ?: ""
+            val player = Bukkit.getPlayer(playerName)
+            if (player == null) {
+                luaState.pushNil()
+                return@push 1
+            }
+
+            val config = permissionManager.getConfig()
+            if (config == null) {
+                luaState.pushNil()
+                return@push 1
+            }
+
+            val uuid = player.uniqueId.toString()
+            val path = "players.$uuid.permissions"
+
+            if (!config.contains(path)) {
+                luaState.pushNil()
+                return@push 1
+            }
+
+            val permissions = config.getStringList(path)
+            luaState.newTable()
+            permissions.forEachIndexed { index, permission ->
+                luaState.push(permission)
+                luaState.rawSetI(-2, index + 1)
+            }
+            return@push 1
+        }
+        lua.setField(-2, "get_player_permissions")
 
         // 添加权限组
-        permissionTable.set("add_group", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 2 || !args.arg(1).isstring() || !args.arg(2).istable()) {
-                    return FALSE
-                }
-
-                val groupName = args.checkjstring(1)
-                val permissionsTable = args.checktable(2)
-                val permissions = mutableListOf<String>()
-                var weight = 0
-                val inherit = mutableListOf<String>()
-
-                // 解析权限列表
-                var i = 1
-                while (true) {
-                    val permission = permissionsTable.get(i)
-                    if (permission.isnil()) break
-                    if (permission.isstring()) {
-                        permissions.add(permission.tojstring())
-                    }
-                    i++
-                }
-
-                // 解析权重
-                if (args.narg() > 2 && args.arg(3).isnumber()) {
-                    weight = args.arg(3).toint()
-                }
-
-                // 解析继承组
-                if (args.narg() > 3 && args.arg(4).istable()) {
-                    val inheritTable = args.checktable(4)
-                    i = 1
-                    while (true) {
-                        val group = inheritTable.get(i)
-                        if (group.isnil()) break
-                        if (group.isstring()) {
-                            inherit.add(group.tojstring())
-                        }
-                        i++
-                    }
-                }
-
-                return valueOf(permissionManager.addGroup(groupName, permissions, weight, inherit))
+        lua.push { luaState ->
+            if (luaState.top < 2) {
+                luaState.push(false)
+                return@push 1
             }
-        })
+
+            val groupName = luaState.toString(1) ?: ""
+            if (!luaState.isTable(2)) {
+                luaState.push(false)
+                return@push 1
+            }
+
+            val permissions = mutableListOf<String>()
+            var weight = 0
+            val inherit = mutableListOf<String>()
+
+            // 解析权限列表
+            luaState.pushNil()
+            while (luaState.next(2) != 0) {
+                val permission = luaState.toString(-1)
+                if (permission != null) {
+                    permissions.add(permission)
+                }
+                luaState.pop(1)
+            }
+
+            // 解析权重
+            if (luaState.top > 2 && luaState.isNumber(3)) {
+                weight = luaState.toInteger(3).toInt()
+            }
+
+            // 解析继承组
+            if (luaState.top > 3 && luaState.isTable(4)) {
+                luaState.pushNil()
+                while (luaState.next(4) != 0) {
+                    val group = luaState.toString(-1)
+                    if (group != null) {
+                        inherit.add(group)
+                    }
+                    luaState.pop(1)
+                }
+            }
+
+            luaState.push(permissionManager.addGroup(groupName, permissions, weight, inherit))
+            return@push 1
+        }
+        lua.setField(-2, "add_group")
 
         // 获取权限组信息
-        permissionTable.set("get_group_info", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 1 || !args.arg(1).isstring()) {
-                    return NIL
-                }
-
-                val groupName = args.checkjstring(1)
-                val config = permissionManager.getConfig() ?: return NIL
-
-                if (!config.contains("groups.$groupName")) return NIL
-
-                val result = LuaTable()
-                result.set("name", valueOf(groupName))
-                result.set("weight", valueOf(config.getInt("groups.$groupName.weight", 0)))
-                
-                val permissions = config.getStringList("groups.$groupName.permissions")
-                val permissionsTable = LuaTable()
-                permissions.forEachIndexed { index, permission ->
-                    permissionsTable.set(index + 1, valueOf(permission))
-                }
-                result.set("permissions", permissionsTable)
-
-                val inherit = config.getStringList("groups.$groupName.inherit")
-                val inheritTable = LuaTable()
-                inherit.forEachIndexed { index, group ->
-                    inheritTable.set(index + 1, valueOf(group))
-                }
-                result.set("inherit", inheritTable)
-
-                return result
+        lua.push { luaState ->
+            if (luaState.top < 1) {
+                luaState.pushNil()
+                return@push 1
             }
-        })
+
+            val groupName = luaState.toString(1) ?: ""
+            val config = permissionManager.getConfig()
+            if (config == null) {
+                luaState.pushNil()
+                return@push 1
+            }
+
+            if (!config.contains("groups.$groupName")) {
+                luaState.pushNil()
+                return@push 1
+            }
+
+            luaState.newTable()
+            luaState.push(groupName)
+            luaState.setField(-2, "name")
+            luaState.push(config.getInt("groups.$groupName.weight", 0).toLong())
+            luaState.setField(-2, "weight")
+
+            val permissions = config.getStringList("groups.$groupName.permissions")
+            luaState.newTable()
+            permissions.forEachIndexed { index, permission ->
+                luaState.push(permission)
+                luaState.rawSetI(-2, index + 1)
+            }
+            luaState.setField(-2, "permissions")
+
+            val inherit = config.getStringList("groups.$groupName.inherit")
+            luaState.newTable()
+            inherit.forEachIndexed { index, group ->
+                luaState.push(group)
+                luaState.rawSetI(-2, index + 1)
+            }
+            luaState.setField(-2, "inherit")
+
+            return@push 1
+        }
+        lua.setField(-2, "get_group_info")
 
         // 获取权限组权重
-        permissionTable.set("get_group_weight", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 1 || !args.arg(1).isstring()) {
-                    return valueOf(0)
-                }
-
-                val groupName = args.checkjstring(1)
-                return valueOf(permissionManager.getGroupWeight(groupName))
+        lua.push { luaState ->
+            if (luaState.top < 1) {
+                luaState.push(0)
+                return@push 1
             }
-        })
+
+            val groupName = luaState.toString(1) ?: ""
+            luaState.push(permissionManager.getGroupWeight(groupName).toLong())
+            return@push 1
+        }
+        lua.setField(-2, "get_group_weight")
 
         // 设置权限组权重
-        permissionTable.set("set_group_weight", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 2 || !args.arg(1).isstring() || !args.arg(2).isnumber()) {
-                    return valueOf(false)
-                }
-
-                val groupName = args.checkjstring(1)
-                val weight = args.arg(2).toint()
-
-                return valueOf(permissionManager.setGroupWeight(groupName, weight))
+        lua.push { luaState ->
+            if (luaState.top < 2) {
+                luaState.push(false)
+                return@push 1
             }
-        })
+
+            val groupName = luaState.toString(1) ?: ""
+            val weight = luaState.toInteger(2).toInt()
+
+            luaState.push(permissionManager.setGroupWeight(groupName, weight))
+            return@push 1
+        }
+        lua.setField(-2, "set_group_weight")
 
         // 设置权限组继承关系
-        permissionTable.set("set_group_inherit", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 2 || !args.arg(1).isstring() || !args.arg(2).istable()) {
-                    return valueOf(false)
-                }
-
-                val groupName = args.checkjstring(1)
-                val inheritTable = args.checktable(2)
-                val inherit = mutableListOf<String>()
-
-                var i = 1
-                while (true) {
-                    val group = inheritTable.get(i)
-                    if (group.isnil()) break
-                    if (group.isstring()) {
-                        inherit.add(group.tojstring())
-                    }
-                    i++
-                }
-
-                return valueOf(permissionManager.setGroupInheritance(groupName, inherit))
+        lua.push { luaState ->
+            if (luaState.top < 2) {
+                luaState.push(false)
+                return@push 1
             }
-        })
+
+            val groupName = luaState.toString(1) ?: ""
+            if (!luaState.isTable(2)) {
+                luaState.push(false)
+                return@push 1
+            }
+
+            val inherit = mutableListOf<String>()
+
+            luaState.pushNil()
+            while (luaState.next(2) != 0) {
+                val group = luaState.toString(-1)
+                if (group != null) {
+                    inherit.add(group)
+                }
+                luaState.pop(1)
+            }
+
+            luaState.push(permissionManager.setGroupInheritance(groupName, inherit))
+            return@push 1
+        }
+        lua.setField(-2, "set_group_inherit")
 
         // 将玩家添加到权限组
-        permissionTable.set("add_player_group", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 2 || !args.arg(1).isstring() || !args.arg(2).isstring()) {
-                    return valueOf(false)
-                }
-
-                val playerName = args.checkjstring(1)
-                val groupName = args.checkjstring(2)
-
-                val player = Bukkit.getPlayer(playerName) ?: return valueOf(false)
-                return valueOf(permissionManager.addPlayerToGroup(player, groupName))
+        lua.push { luaState ->
+            if (luaState.top < 2) {
+                luaState.push(false)
+                return@push 1
             }
-        })
+
+            val playerName = luaState.toString(1) ?: ""
+            val groupName = luaState.toString(2) ?: ""
+
+            val player = Bukkit.getPlayer(playerName)
+            if (player == null) {
+                luaState.push(false)
+                return@push 1
+            }
+
+            luaState.push(permissionManager.addPlayerToGroup(player, groupName))
+            return@push 1
+        }
+        lua.setField(-2, "add_player_group")
 
         // 将玩家从权限组移除
-        permissionTable.set("remove_player_group", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 2 || !args.arg(1).isstring() || !args.arg(2).isstring()) {
-                    return valueOf(false)
-                }
-
-                val playerName = args.checkjstring(1)
-                val groupName = args.checkjstring(2)
-
-                val player = Bukkit.getPlayer(playerName) ?: return valueOf(false)
-                return valueOf(permissionManager.removePlayerFromGroup(player, groupName))
+        lua.push { luaState ->
+            if (luaState.top < 2) {
+                luaState.push(false)
+                return@push 1
             }
-        })
+
+            val playerName = luaState.toString(1) ?: ""
+            val groupName = luaState.toString(2) ?: ""
+
+            val player = Bukkit.getPlayer(playerName)
+            if (player == null) {
+                luaState.push(false)
+                return@push 1
+            }
+
+            luaState.push(permissionManager.removePlayerFromGroup(player, groupName))
+            return@push 1
+        }
+        lua.setField(-2, "remove_player_group")
 
         // 获取玩家所属的所有权限组
-        permissionTable.set("get_player_groups", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 1 || !args.arg(1).isstring()) {
-                    return NIL
-                }
-
-                val playerName = args.checkjstring(1)
-                val player = Bukkit.getPlayer(playerName) ?: return NIL
-
-                val config = permissionManager.getConfig() ?: return NIL
-                val uuid = player.uniqueId.toString()
-                val path = "players.$uuid.groups"
-                
-                if (!config.contains(path)) return NIL
-                
-                val groups = config.getStringList(path)
-                val result = LuaTable()
-                groups.forEachIndexed { index, group ->
-                    result.set(index + 1, valueOf(group))
-                }
-                return result
+        lua.push { luaState ->
+            if (luaState.top < 1) {
+                luaState.pushNil()
+                return@push 1
             }
-        })
+
+            val playerName = luaState.toString(1) ?: ""
+            val player = Bukkit.getPlayer(playerName)
+            if (player == null) {
+                luaState.pushNil()
+                return@push 1
+            }
+
+            val config = permissionManager.getConfig()
+            if (config == null) {
+                luaState.pushNil()
+                return@push 1
+            }
+
+            val uuid = player.uniqueId.toString()
+            val path = "players.$uuid.groups"
+
+            if (!config.contains(path)) {
+                luaState.pushNil()
+                return@push 1
+            }
+
+            val groups = config.getStringList(path)
+            luaState.newTable()
+            groups.forEachIndexed { index, group ->
+                luaState.push(group)
+                luaState.rawSetI(-2, index + 1)
+            }
+            return@push 1
+        }
+        lua.setField(-2, "get_player_groups")
+
+        lua.setGlobal("perm")
 
         // 添加到 API 名称列表
-        if (!apiNames.contains("permission")) {
-            apiNames.add("permission")
+        if (!apiNames.contains("perm")) {
+            apiNames.add("perm")
         }
 
         PLog.info("log.info.permission_api_set")

@@ -1,7 +1,8 @@
 package tech.ezeny.luagin.lua
 
-import org.luaj.vm2.Globals
-import org.luaj.vm2.lib.jse.JsePlatform
+import party.iroiro.luajava.Lua
+import party.iroiro.luajava.LuaException
+import party.iroiro.luajava.luajit.LuaJit
 import tech.ezeny.luagin.events.EventManager
 import tech.ezeny.luagin.utils.CommunicationUtils
 import tech.ezeny.luagin.utils.PLog
@@ -13,7 +14,7 @@ class ScriptManager(
     private val luaEnvManager: LuaEnvManager
 ) {
     private val scriptsFolder: File = luaEnvManager.scriptsFolder
-    private val scriptEnvironments = mutableMapOf<String, Globals>()
+    private val scriptEnvironments = mutableMapOf<String, Lua>()
 
     init {
         ensureScriptsFolderExists()
@@ -37,6 +38,7 @@ class ScriptManager(
             return 0
         }
 
+        scriptEnvironments.values.forEach { it.close() }
         scriptEnvironments.clear()
         var loadedCount = 0
 
@@ -74,12 +76,19 @@ class ScriptManager(
 
         return try {
             ScriptUtils.setCurrentScript(scriptFile.name)
-            val scriptGlobals = createScriptEnvironment()
-            scriptGlobals.loadfile(scriptFile.absolutePath).call()
-            scriptEnvironments[scriptFile.absolutePath] = scriptGlobals
+            val scriptLua = createScriptEnvironment()
+
+            scriptLua.run(scriptFile.readText())
+
+            scriptEnvironments[scriptFile.absolutePath] = scriptLua
+            ScriptUtils.setCurrentLua(scriptFile.name, scriptLua)
+
             PLog.info("log.info.loading_lua_succeeded", scriptFile.name)
             true
         } catch (e: Exception) {
+            PLog.severe("log.severe.loading_lua_failed", scriptFile.name, e.message ?: "Unknown error")
+            false
+        } catch (e: LuaException) {
             PLog.severe("log.severe.loading_lua_failed", scriptFile.name, e.message ?: "Unknown error")
             false
         }
@@ -106,6 +115,10 @@ class ScriptManager(
         eventManager.clearHandlersForScript(scriptFile.name)
         // 清理共享函数和环境
         CommunicationUtils.clearScriptFunctions(scriptFile.name)
+        // 清理 ScriptUtils 中的 Lua 实例
+        ScriptUtils.removeScriptLua(scriptFile.name)
+
+        scriptEnvironments[scriptFile.absolutePath]?.close()
         scriptEnvironments.remove(scriptFile.absolutePath)
 
         return loadScript(scriptFile)
@@ -116,28 +129,21 @@ class ScriptManager(
      *
      * @return Lua 脚本环境
      */
-    private fun createScriptEnvironment(): Globals {
-        val globals = JsePlatform.standardGlobals()
-        copySharedAPIs(globals)
-        return globals
+    private fun createScriptEnvironment(): Lua {
+        val lua = LuaJit()
+        lua.openLibraries()
+        copySharedAPIs(lua)
+        return lua
     }
 
     /**
-     * 将共享的 API 从主环境复制到新的脚本环境
+     * 将共享的 API 注册到新的脚本环境
      *
-     * @param scriptGlobals 新创建的脚本环境
+     * @param scriptLua 新创建的脚本环境
      */
-    private fun copySharedAPIs(scriptGlobals: Globals) {
-        val mainGlobals = luaEnvManager.globals
-        val sharedAPIs = luaEnvManager.getSharedAPIs()
-        for (api in sharedAPIs) {
-            val apiValue = mainGlobals.get(api)
-            if (!apiValue.isnil()) {
-                scriptGlobals.set(api, apiValue)
-            } else {
-                PLog.severe("log.severe.copy_shared_api_failed", api)
-            }
-        }
+    private fun copySharedAPIs(scriptLua: Lua) {
+        // 直接为脚本环境注册所有 API，而不是从主环境复制
+        luaEnvManager.apiRegister.registerAllAPIs(scriptLua)
     }
 
     fun listScripts(): List<String> {

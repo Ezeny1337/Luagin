@@ -3,7 +3,7 @@ package tech.ezeny.luagin.commands
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandMap
 import org.bukkit.command.CommandSender
-import org.luaj.vm2.LuaFunction
+import party.iroiro.luajava.Lua
 import tech.ezeny.luagin.Luagin
 import tech.ezeny.luagin.permissions.PermissionManager
 import java.lang.reflect.Field
@@ -36,9 +36,9 @@ class CommandManager(private val plugin: Luagin, private val permissionManager: 
     /**
      * 注册一个新命令
      */
-    fun registerCommand(name: String, permission: String, handler: LuaFunction): LuaCommand {
+    fun registerCommand(name: String, permission: String, lua: Lua, handlerRef: Int): LuaCommand {
         // 创建命令对象
-        val command = LuaCommand(name, permission, handler, this, permissionManager)
+        val command = LuaCommand(name, permission, lua, handlerRef, this, permissionManager)
 
         // 注册到 Bukkit
         commandMap.register(plugin.name.lowercase(), command)
@@ -84,6 +84,33 @@ class CommandManager(private val plugin: Luagin, private val permissionManager: 
     }
 
     /**
+     * 递归查找参数的权限（用于补全和执行）
+     */
+    private fun resolvePermission(
+        command: LuaCommand,
+        position: Int,
+        arg: String,
+        previousArg: String = ""
+    ): String {
+        val cmdArgs = commandTabCompletions[command.name] ?: return command.getRequiredPermission()
+        val posArgs = cmdArgs[position] ?: return command.getRequiredPermission()
+        for ((key, argInfo) in posArgs) {
+            val parts = key.split(":", limit = 2)
+            val keyPrevArg = parts[0]
+            val keyPermission = if (parts.size > 1) parts[1] else ""
+            if ((keyPrevArg == previousArg || keyPrevArg == "") && argInfo.args.contains(arg)) {
+                if (keyPermission.isNotEmpty()) return keyPermission
+                // 递归查找上一级参数的权限
+                if (position > 1) {
+                    val prevArg = if (position > 2) previousArg else ""
+                    return resolvePermission(command, position - 1, previousArg, prevArg)
+                }
+            }
+        }
+        return command.getRequiredPermission()
+    }
+
+    /**
      * 获取命令的Tab补全
      * @param commandName 命令名
      * @param position 当前参数位置
@@ -107,30 +134,22 @@ class CommandManager(private val plugin: Luagin, private val permissionManager: 
 
         // 遍历所有参数信息
         for ((key, argInfo) in posArgs) {
-            // 解析键
             val parts = key.split(":", limit = 2)
             val keyPrevArg = parts[0]
-            val keyPermission = if (parts.size > 1) parts[1] else ""
-
             // 检查前置参数是否匹配
             if (keyPrevArg == previousArg || keyPrevArg == "") {
-                // 检查权限
-                val permission = keyPermission.ifEmpty {
-                    // 如果没有设置权限，则使用命令的权限
-                    command.getRequiredPermission()
-                }
-
-                // 如果发送者有权限或没有发送者则添加参数
-                if (sender == null || permissionManager.hasPermission(sender, permission)) {
-                    allArgs.addAll(argInfo.args)
+                // 检查权限（递归继承）
+                for (arg in argInfo.args) {
+                    val permission = resolvePermission(command, position, arg, previousArg)
+                    if (sender == null || permissionManager.hasPermission(sender, permission)) {
+                        if (arg.startsWith(currentArg, ignoreCase = true)) {
+                            allArgs.add(arg)
+                        }
+                    }
                 }
             }
         }
-
-        // 过滤出匹配当前输入的参数
-        val filteredArgs = allArgs.filter { it.startsWith(currentArg, ignoreCase = true) }
-
-        return filteredArgs
+        return allArgs
     }
 
     /**

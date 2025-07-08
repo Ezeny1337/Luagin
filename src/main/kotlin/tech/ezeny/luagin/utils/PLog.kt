@@ -49,4 +49,8 @@ object PLog : KoinComponent {
     fun severe(key: String, vararg args: Any) {
         log(Level.SEVERE, i18n.get(key, *args))
     }
+
+    fun print(message: String) {
+        loggerInstance?.log(Level.INFO, message)
+    }
 }

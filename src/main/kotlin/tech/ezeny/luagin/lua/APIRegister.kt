@@ -1,11 +1,12 @@
 package tech.ezeny.luagin.lua
 
-import org.luaj.vm2.Globals
+import party.iroiro.luajava.Lua
 import tech.ezeny.luagin.Luagin
 import tech.ezeny.luagin.lua.api.ActionBarAPI
 import tech.ezeny.luagin.lua.api.ChatAPI
 import tech.ezeny.luagin.lua.api.CommandAPI
 import tech.ezeny.luagin.lua.api.CommunicationAPI
+import tech.ezeny.luagin.lua.api.ConsoleAPI
 import tech.ezeny.luagin.lua.api.EventsAPI
 import tech.ezeny.luagin.lua.api.FilesAPI
 import tech.ezeny.luagin.lua.api.MySQLAPI
@@ -32,7 +33,8 @@ class APIRegister(private val plugin: Luagin) {
         MySQLAPI,
         PermissionAPI,
         CommandAPI,
-        NetworkAPI
+        NetworkAPI,
+        ConsoleAPI
     )
 
     init {
@@ -43,10 +45,10 @@ class APIRegister(private val plugin: Luagin) {
     /**
      * 注册所有 API 到 Lua 环境
      */
-    fun registerAllAPIs(globals: Globals) {
+    fun registerAllAPIs(lua: Lua) {
         // 注册所有API提供者的API
         apiProviders.forEach { provider ->
-            provider.registerAPI(globals)
+            provider.registerAPI(lua)
 
             // 收集API名称
             val names = provider.getAPINames()

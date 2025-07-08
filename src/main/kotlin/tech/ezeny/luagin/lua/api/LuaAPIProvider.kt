@@ -1,10 +1,10 @@
 package tech.ezeny.luagin.lua.api
 
-import org.luaj.vm2.Globals
+import party.iroiro.luajava.Lua
 import tech.ezeny.luagin.Luagin
 
 interface LuaAPIProvider {
     fun initialize(plugin: Luagin) {}
-    fun registerAPI(globals: Globals)
+    fun registerAPI(lua: Lua)
     fun getAPINames(): List<String>
 }

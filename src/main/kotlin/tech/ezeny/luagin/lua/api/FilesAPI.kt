@@ -1,9 +1,6 @@
 package tech.ezeny.luagin.lua.api
 
-import org.luaj.vm2.Globals
-import org.luaj.vm2.LuaTable
-import org.luaj.vm2.Varargs
-import org.luaj.vm2.lib.VarArgFunction
+import party.iroiro.luajava.Lua
 import tech.ezeny.luagin.Luagin
 import tech.ezeny.luagin.utils.PLog
 import java.io.File
@@ -17,150 +14,168 @@ object FilesAPI : LuaAPIProvider {
         this.plugin = plugin
     }
 
-    override fun registerAPI(globals: Globals) {
+    override fun registerAPI(lua: Lua) {
         // 创建 files 表
-        val filesTable = LuaTable()
-        globals.set("files", filesTable)
+        lua.newTable()
 
         // 读取文件内容
-        filesTable.set("read", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 1 || !args.arg(1).isstring()) {
-                    return NIL
-                }
-
-                val relativePath = args.checkjstring(1)
-                val absolutePath = getAbsolutePath(relativePath)
-                val file = File(absolutePath)
-
-                if (!file.exists() || !file.isFile) {
-                    return NIL
-                }
-
-                return try {
-                    val content = file.readText(Charsets.UTF_8)
-                    valueOf(content)
-                } catch (e: IOException) {
-                    PLog.warning("log.warning.read_file_failed", relativePath, e.message ?: "Unknown error")
-                    NIL
-                }
+        lua.push { luaState ->
+            if (luaState.top < 1) {
+                luaState.pushNil()
+                return@push 1
             }
-        })
+
+            val relativePath = luaState.toString(1) ?: ""
+            val absolutePath = getAbsolutePath(relativePath)
+            val file = File(absolutePath)
+
+            if (!file.exists() || !file.isFile) {
+                luaState.pushNil()
+                return@push 1
+            }
+
+            try {
+                val content = file.readText(Charsets.UTF_8)
+                luaState.push(content)
+                return@push 1
+            } catch (e: IOException) {
+                PLog.warning("log.warning.read_file_failed", relativePath, e.message ?: "Unknown error")
+                luaState.pushNil()
+                return@push 1
+            }
+        }
+        lua.setField(-2, "read")
 
         // 写入文件内容
-        filesTable.set("write", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 2 || !args.arg(1).isstring() || !args.arg(2).isstring()) {
-                    return FALSE
-                }
-
-                val relativePath = args.checkjstring(1)
-                val contents = args.checkjstring(2)
-                val isBinary = if (args.narg() > 2) args.checkboolean(3) else false
-
-                val absolutePath = getAbsolutePath(relativePath)
-                val file = File(absolutePath)
-
-                return try {
-                    // 二进制或文本写入
-                    if (isBinary) {
-                        file.writeBytes(contents.toByteArray())
-                    } else {
-                        file.writeText(contents, Charsets.UTF_8)
-                    }
-                    TRUE
-                } catch (e: IOException) {
-                    PLog.warning("log.warning.write_file_failed", relativePath, e.message ?: "Unknown error")
-                    FALSE
-                }
+        lua.push { luaState ->
+            if (luaState.top < 2) {
+                luaState.push(false)
+                return@push 1
             }
-        })
+
+            val relativePath = luaState.toString(1) ?: ""
+            val contents = luaState.toString(2) ?: ""
+            val isBinary = if (luaState.top > 2) luaState.toBoolean(3) else false
+
+            val absolutePath = getAbsolutePath(relativePath)
+            val file = File(absolutePath)
+
+            try {
+                // 二进制或文本写入
+                if (isBinary) {
+                    file.writeBytes(contents.toByteArray())
+                } else {
+                    file.writeText(contents, Charsets.UTF_8)
+                }
+                luaState.push(true)
+                return@push 1
+            } catch (e: IOException) {
+                PLog.warning("log.warning.write_file_failed", relativePath, e.message ?: "Unknown error")
+                luaState.push(false)
+                return@push 1
+            }
+        }
+        lua.setField(-2, "write")
 
         // 创建目录
-        filesTable.set("create_folder", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 1 || !args.arg(1).isstring()) {
-                    return FALSE
-                }
-
-                val relativePath = args.checkjstring(1)
-                val absolutePath = getAbsolutePath(relativePath)
-                val dir = File(absolutePath)
-
-                return try {
-                    valueOf(dir.mkdirs())
-                } catch (e: IOException) {
-                    PLog.warning("log.warning.mkdirs_failed", relativePath, e.message ?: "Unknown error")
-                    FALSE
-                }
+        lua.push { luaState ->
+            if (luaState.top < 1) {
+                luaState.push(false)
+                return@push 1
             }
-        })
+
+            val relativePath = luaState.toString(1) ?: ""
+            val absolutePath = getAbsolutePath(relativePath)
+            val dir = File(absolutePath)
+
+            try {
+                luaState.push(dir.mkdirs())
+                return@push 1
+            } catch (e: IOException) {
+                PLog.warning("log.warning.mkdirs_failed", relativePath, e.message ?: "Unknown error")
+                luaState.push(false)
+                return@push 1
+            }
+        }
+        lua.setField(-2, "create_folder")
 
         // 创建文件
-        filesTable.set("create_file", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 1 || !args.arg(1).isstring()) {
-                    return FALSE
-                }
-
-                val relativePath = args.checkjstring(1)
-                val absolutePath = getAbsolutePath(relativePath)
-                val file = File(absolutePath)
-
-                if (file.exists()) {
-                    return TRUE
-                }
-
-                return try {
-                    valueOf(file.createNewFile())
-                } catch (e: IOException) {
-                    PLog.warning("log.warning.create_file_failed", relativePath, e.message ?: "Unknown error")
-                    FALSE
-                }
+        lua.push { luaState ->
+            if (luaState.top < 1) {
+                luaState.push(false)
+                return@push 1
             }
-        })
+
+            val relativePath = luaState.toString(1) ?: ""
+            val absolutePath = getAbsolutePath(relativePath)
+            val file = File(absolutePath)
+
+            if (file.exists()) {
+                luaState.push(true)
+                return@push 1
+            }
+
+            try {
+                luaState.push(file.createNewFile())
+                return@push 1
+            } catch (e: IOException) {
+                PLog.warning("log.warning.create_file_failed", relativePath, e.message ?: "Unknown error")
+                luaState.push(false)
+                return@push 1
+            }
+        }
+        lua.setField(-2, "create_file")
 
         // 检查文件或文件夹是否存在
-        filesTable.set("exists", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 1 || !args.arg(1).isstring()) {
-                    return FALSE
-                }
-
-                val relativePath = args.checkjstring(1)
-                val absolutePath = getAbsolutePath(relativePath)
-                val file = File(absolutePath)
-
-                return valueOf(file.exists())
+        lua.push { luaState ->
+            if (luaState.top < 1) {
+                luaState.push(false)
+                return@push 1
             }
-        })
+
+            val relativePath = luaState.toString(1) ?: ""
+            val absolutePath = getAbsolutePath(relativePath)
+            val file = File(absolutePath)
+
+            luaState.push(file.exists())
+            return@push 1
+        }
+        lua.setField(-2, "exists")
 
         // 列出目录内容
-        filesTable.set("list_dir", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 1 || !args.arg(1).isstring()) {
-                    return NIL
-                }
-
-                val relativePath = args.checkjstring(1)
-                val absolutePath = getAbsolutePath(relativePath)
-                val dir = File(absolutePath)
-
-                if (!dir.exists() || !dir.isDirectory) {
-                    PLog.warning("log.warning.dir_not_found", relativePath)
-                    return NIL
-                }
-
-                val files = dir.listFiles() ?: return NIL
-                val luaTable = LuaTable()
-
-                files.forEachIndexed { index, file ->
-                    luaTable.set(index + 1, valueOf(file.name))
-                }
-
-                return luaTable
+        lua.push { luaState ->
+            if (luaState.top < 1) {
+                luaState.pushNil()
+                return@push 1
             }
-        })
+
+            val relativePath = luaState.toString(1) ?: ""
+            val absolutePath = getAbsolutePath(relativePath)
+            val dir = File(absolutePath)
+
+            if (!dir.exists() || !dir.isDirectory) {
+                PLog.warning("log.warning.dir_not_found", relativePath)
+                luaState.pushNil()
+                return@push 1
+            }
+
+            val files = dir.listFiles()
+            if (files == null) {
+                luaState.pushNil()
+                return@push 1
+            }
+
+            luaState.newTable()
+            files.forEachIndexed { index, file ->
+                luaState.push(file.name)
+                luaState.rawSetI(-2, index + 1)
+            }
+
+            return@push 1
+        }
+        lua.setField(-2, "list_dir")
+
+        lua.setGlobal("files")
 
         // 添加到 API 名称列表
         if (!apiNames.contains("files")) {

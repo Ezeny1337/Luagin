@@ -1,7 +1,6 @@
 package tech.ezeny.luagin.network
 
 import org.bukkit.Bukkit
-import org.luaj.vm2.LuaTable
 import tech.ezeny.luagin.Luagin
 import tech.ezeny.luagin.utils.PLog
 import java.io.BufferedReader
@@ -177,31 +176,20 @@ class NetworkManager(private val plugin: Luagin) {
         Bukkit.getScheduler().runTask(plugin, runnable)
     }
 
-    fun convertLuaTableToMap(table: LuaTable): Map<String, Any> {
+    fun convertLuaTableToMap(table: Map<*, *>?): Map<String, Any> {
+        if (table == null) return emptyMap()
+
         val result = mutableMapOf<String, Any>()
-        var i = 1
 
-        // 检查是否是数组形式的表
-        val isArray = !table.get(1).isnil()
+        table.forEach { (key, value) ->
+            val keyStr = key?.toString() ?: return@forEach
 
-        if (!isArray) {
-            // 对象形式的表
-            while (true) {
-                val key = table.get(i)
-                val value = table.get(i + 1)
-                if (key.isnil() || value.isnil()) break
-
-                if (key.isstring()) {
-                    val keyStr = key.checkjstring()
-                    result[keyStr] = when {
-                        value.istable() -> convertLuaTableToMap(value.checktable())
-                        value.isstring() -> value.checkjstring()
-                        value.isboolean() -> value.checkboolean()
-                        value.isnumber() -> value.checkdouble()
-                        else -> value.tojstring()
-                    }
-                }
-                i += 2
+            result[keyStr] = when (value) {
+                is Map<*, *> -> convertLuaTableToMap(value)
+                is String -> value
+                is Boolean -> value
+                is Number -> value
+                else -> value?.toString() ?: ""
             }
         }
 

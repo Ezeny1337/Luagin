@@ -1,80 +1,101 @@
 package tech.ezeny.luagin.lua.api
 
 import org.koin.core.component.KoinComponent
-import org.luaj.vm2.Globals
-import org.luaj.vm2.LuaTable
-import org.luaj.vm2.Varargs
-import org.luaj.vm2.lib.VarArgFunction
+import party.iroiro.luajava.Lua
 import tech.ezeny.luagin.utils.CommunicationUtils
 import tech.ezeny.luagin.utils.PLog
 
 object CommunicationAPI : LuaAPIProvider, KoinComponent {
     private val apiNames = mutableListOf<String>()
 
-    override fun registerAPI(globals: Globals) {
-        // 创建通信表
-        val scriptCommTable = LuaTable()
-        globals.set("comm", scriptCommTable)
+    override fun registerAPI(lua: Lua) {
+        // 创建 comm 表
+        lua.newTable()
 
         // 暴露函数
-        scriptCommTable.set("expose_func", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 2 || !args.arg(1).isstring() || !args.arg(2).isfunction()) {
-                    return FALSE
-                }
-
-                val functionName = args.checkjstring(1)
-                val function = args.checkfunction(2)
-
-                val success = CommunicationUtils.exposeFunction(functionName, function)
-                return if (success) TRUE else FALSE
+        lua.push { luaState ->
+            if (luaState.top < 2) {
+                luaState.error("Usage: comm.expose_func(functionName, function)")
+                return@push 0
             }
-        })
+
+            val functionName = luaState.toString(1) ?: ""
+            val handlerIndex = 2
+
+            if (!luaState.isFunction(handlerIndex)) {
+                luaState.error("Second argument must be a function")
+                return@push 0
+            }
+
+            // 将 Lua 函数引用存储到注册表中
+            luaState.pushValue(handlerIndex)
+            val functionRef = luaState.ref()
+
+            val success = CommunicationUtils.exposeFunction(functionName, functionRef)
+            luaState.push(success)
+            return@push 1
+        }
+        lua.setField(-2, "expose_func")
 
         // 取消暴露函数
-        scriptCommTable.set("unexpose_func", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 1 || !args.arg(1).isstring()) {
-                    return FALSE
-                }
-
-                val functionName = args.checkjstring(1)
-
-                val success = CommunicationUtils.unexposeFunction(functionName)
-                return if (success) TRUE else FALSE
+        lua.push { luaState ->
+            if (luaState.top < 1) {
+                luaState.error("Usage: comm.unexpose_func(functionName)")
+                return@push 0
             }
-        })
+
+            val functionName = luaState.toString(1) ?: ""
+            val success = CommunicationUtils.unexposeFunction(functionName)
+            luaState.push(success)
+            return@push 1
+        }
+        lua.setField(-2, "unexpose_func")
 
         // 调用其他脚本函数
-        scriptCommTable.set("call_func", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 2 || !args.arg(1).isstring() || !args.arg(2).isstring()) {
-                    return NIL
-                }
-
-                val scriptName = args.checkjstring(1)
-                val functionName = args.checkjstring(2)
-
-                // 收集额外参数
-                val functionArgs = if (args.narg() > 2) {
-                    val varargs = varargsOf(Array(args.narg() - 2) { i -> args.arg(i + 3) })
-                    varargs
-                } else {
-                    NONE
-                }
-
-                return CommunicationUtils.callFunction(scriptName, functionName, functionArgs)
+        lua.push { luaState ->
+            if (luaState.top < 2) {
+                luaState.error("Usage: comm.call_func(scriptName, functionName[, ...])")
+                return@push 0
             }
-        })
+
+            val scriptName = luaState.toString(1) ?: ""
+            val functionName = luaState.toString(2) ?: ""
+
+            // 收集额外参数
+            val args = mutableListOf<Any?>()
+            for (i in 3..luaState.top) {
+                args.add(luaState.toJavaObject(i))
+            }
+
+            val result = CommunicationUtils.callFunction(scriptName, functionName, args)
+            when (result) {
+                null -> luaState.pushNil()
+                is String -> luaState.push(result)
+                is Boolean -> luaState.push(result)
+                is Int -> luaState.push(result.toLong())
+                is Long -> luaState.push(result)
+                is Float -> luaState.push(result.toDouble())
+                is Double -> luaState.push(result)
+                is Number -> luaState.push(result)
+                is Collection<*> -> luaState.push(result)
+                is Map<*, *> -> luaState.push(result)
+                else -> luaState.pushJavaObject(result)
+            }
+
+            return@push 1
+        }
+        lua.setField(-2, "call_func")
 
         // 获取所有暴露函数
-        scriptCommTable.set("get_exposed_functions", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                return CommunicationUtils.getExposedFunctions()
-            }
-        })
+        lua.push { luaState ->
+            val exposedFunctions = CommunicationUtils.getExposedFunctions()
+            luaState.push(exposedFunctions)
+            return@push 1
+        }
+        lua.setField(-2, "get_exposed_functions")
 
-        // 添加到API名称列表
+        lua.setGlobal("comm")
+
         if (!apiNames.contains("comm")) {
             apiNames.add("comm")
         }

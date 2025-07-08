@@ -53,6 +53,8 @@ object LanguageUtils {
             enConfig.set("log.info.command_api_set", "Command API has been set")
             enConfig.set("log.info.permission", "Permission API has been set")
             enConfig.set("log.info.network_api_set", "Network API has been set")
+            enConfig.set("log.info.console_api_set","Console API has been set")
+            enConfig.set("log.info.mysql_disabled","MySQL disabled")
 
             // 警告级别消息
             enConfig.set("log.warning.event_not_found", "Event class {0}.{1} not found")
@@ -65,12 +67,8 @@ object LanguageUtils {
             enConfig.set("log.warning.scripts_not_found", "No Lua scripts found in {0}")
             enConfig.set("log.warning.script_not_found", "Lua script not found: {0}")
             enConfig.set("log.warning.invalid_color", "Invalid color code: {0}")
-            enConfig.set("log.warning.getter_failed", "Failed to find or invoking getter {0} or {1}: {2}")
-            enConfig.set("log.warning.set_property_failed", "Failed to set property {0}: {1}")
-            enConfig.set(
-                "log.warning.set_property_failed_not_found",
-                "Cannot set property {0}: suitable setter method not found"
-            )
+            enConfig.set("log.warning.getter_failed", "Failed to find or invoking getter {0}: {1}")
+            enConfig.set("log.warning.setter_failed", "Failed to find or invoking setter {0}: {1}")
             enConfig.set("log.warning.player_not_found", "Player not found: {0}")
             enConfig.set("log.warning.command_exec_failed", "Failed to execute command {0}: {1}")
             enConfig.set("log.warning.execute_after_failed", "Failed to execute delayed callback: {0}")
@@ -86,9 +84,11 @@ object LanguageUtils {
             enConfig.set("log.warning.mysql_update_failed", "Failed to update MySQL table {0}: {1}")
             enConfig.set("log.warning.mysql_query_failed", "Failed to query MySQL table {0}: {1}")
             enConfig.set("log.warning.execute_command_failed", "Failed to execute command /{0}: {1}")
-            enConfig.set("log.warning.method_not_match", "No matching method overload: {0}")
-            enConfig.set("log.warning.method_not_found", "Method not found: {0}")
             enConfig.set("log.warning.network_request_failed", "Failed to send network request to {0}: {1}")
+            enConfig.set("log.warning.object_is_null", "Object {0} is null")
+            enConfig.set("log.warning.method_call_failed", "Failed to call method {0}: {1}")
+            enConfig.set("log.warning.no_matching_method", "No matching method: {0}")
+            enConfig.set("log.warning.method_not_found", "Method not found: {0}")
 
             // 严重级别消息
             enConfig.set("log.severe.copy_shared_api_failed", "Shared API: {0} is nil in the main environment")
@@ -117,7 +117,6 @@ object LanguageUtils {
             )
             enConfig.set("command.reload.all.loading", "Reloading all Lua scripts...")
             enConfig.set("command.reload.all.success", "Successfully reloaded {0} scripts")
-            enConfig.set("command.no_permission", "Permission denied!")
             enConfig.set("command.missing_argument", "Missing argument: {0}")
             enConfig.set("command.invalid_argument", "Invalid argument: {0}")
 
@@ -160,6 +159,8 @@ object LanguageUtils {
             zhConfig.set("log.info.command_api_set", "Command API 已设置")
             zhConfig.set("log.info.permission_api_set", "Permission API 已设置")
             zhConfig.set("log.info.network_api_set", "Network API 已设置")
+            zhConfig.set("log.info.console_api_set","Console API 已设置")
+            zhConfig.set("log.info.mysql_disabled","MySQL 已禁用")
 
             zhConfig.set("log.warning.event_not_found", "找不到事件类 {0}.{1}")
             zhConfig.set("log.warning.register_event_handler_failed", "注册事件处理器失败: {0}")
@@ -168,9 +169,8 @@ object LanguageUtils {
             zhConfig.set("log.warning.scripts_not_found", "在 {0} 未找到任何 Lua 脚本")
             zhConfig.set("log.warning.script_not_found", "Lua 脚本不存在: {0}")
             zhConfig.set("log.warning.invalid_color", "无效的颜色代码: {0}")
-            zhConfig.set("log.warning.getter_failed", "查找或调用 getter {0} 或 {1} 失败: {2}")
-            zhConfig.set("log.warning.set_property_failed", "设置属性 {0} 失败: {1}")
-            zhConfig.set("log.warning.set_property_failed_not_found", "无法设置属性 {0}: 找不到合适的 setter 方法")
+            zhConfig.set("log.warning.getter_failed", "查找或调用 getter {0} 失败: {1}")
+            zhConfig.set("log.warning.setter_failed", "查找或调用 setter {0} 失败: {1}")
             zhConfig.set("log.warning.player_not_found", "找不到玩家: {0}")
             zhConfig.set("log.warning.command_exec_failed", "执行命令 {0} 失败: {1}")
             zhConfig.set("log.warning.execute_after_failed", "执行延迟回调失败: {0}")
@@ -186,9 +186,11 @@ object LanguageUtils {
             zhConfig.set("log.warning.mysql_update_failed", "更新 MySQL 表 {0} 失败: {1}")
             zhConfig.set("log.warning.mysql_query_failed", "查询 MySQL 表 {0} 失败: {1}")
             zhConfig.set("log.warning.execute_command_failed", "执行命令 /{0} 失败: {1}")
-            zhConfig.set("log.warning.method_not_match", "没有匹配的方法重载: {0}")
-            zhConfig.set("log.warning.method_not_found", "找不到方法: {0}")
             zhConfig.set("log.warning.network_request_failed", "发送网络请求到 {0} 失败: {1}")
+            zhConfig.set("log.warning.object_is_null", "对象 {0} 为空")
+            zhConfig.set("log.warning.method_call_failed", "方法 {0} 调用失败: {1}")
+            zhConfig.set("log.warning.no_matching_method", "找不到匹配的方法 {0}")
+            zhConfig.set("log.warning.method_not_found", "找不到方法 {0}")
 
             // 严重级别消息
             zhConfig.set("log.severe.copy_shared_api_failed", "共享 API: {0} 在主环境为 nil")

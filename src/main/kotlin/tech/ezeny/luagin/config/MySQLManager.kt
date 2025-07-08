@@ -15,16 +15,32 @@ import kotlin.time.toDuration
 
 class MySQLManager(private val plugin: Luagin, private val yamlManager: YamlManager) {
     private var dataSource: HikariDataSource? = null
+
     // 缓存管理器，用于缓存查询结果
     private val cacheManager = CacheManager()
+
     // 用于异步执行数据库操作的线程池
     private val executor = Executors.newFixedThreadPool(4)
 
+    // MySQL 是否启用
+    private var isEnabled = false
+
     init {
+        initializeDatabase()
+    }
+
+    private fun initializeDatabase() {
         try {
             val config = yamlManager.getConfig("configs/mysql.yml") ?: run {
                 createDefaultConfig()
-                yamlManager.getConfig("configs/mysql.yml") ?: throw IllegalStateException("Falied to load MySQL configuration")
+                yamlManager.getConfig("configs/mysql.yml")
+                    ?: throw IllegalStateException("Failed to load MySQL configuration")
+            }
+
+            isEnabled = config.getBoolean("enable", false)
+            if (!isEnabled) {
+                PLog.info("log.info.mysql_disabled")
+                return
             }
 
             val hikariConfig = HikariConfig().apply {
@@ -49,7 +65,6 @@ class MySQLManager(private val plugin: Luagin, private val yamlManager: YamlMana
                 addDataSourceProperty("maintainTimeStats", "false")
             }
 
-            // 初始化数据库连接池
             dataSource = HikariDataSource(hikariConfig)
             testConnection()
             PLog.info("log.info.mysql_connected")
@@ -60,6 +75,7 @@ class MySQLManager(private val plugin: Luagin, private val yamlManager: YamlMana
 
     private fun createDefaultConfig() {
         val defaultConfig = YamlConfiguration().apply {
+            set("enable", false)
             set("host", "localhost")
             set("port", 3306)
             set("database", "luagin")
@@ -105,6 +121,11 @@ class MySQLManager(private val plugin: Luagin, private val yamlManager: YamlMana
      * @param columns 列名和列类型的映射
      */
     fun createTable(tableName: String, columns: Map<String, String>) {
+        if (!isEnabled) {
+            PLog.info("log.info.mysql_disabled")
+            return
+        }
+
         val columnDefinitions = columns.entries.joinToString(",\n") { (name, type) ->
             "$name $type"
         }
@@ -131,6 +152,12 @@ class MySQLManager(private val plugin: Luagin, private val yamlManager: YamlMana
      * @param callback 插入成功后的回调，返回插入的 ID
      */
     fun insert(tableName: String, values: Map<String, Any>, callback: ((Int) -> Unit)? = null) {
+        if (!isEnabled) {
+            PLog.info("log.info.mysql_disabled")
+            callback?.invoke(-1)
+            return
+        }
+
         val cacheKey = "$tableName:${values.values.joinToString(":")}"
 
         // 先更新缓存
@@ -187,6 +214,12 @@ class MySQLManager(private val plugin: Luagin, private val yamlManager: YamlMana
         whereArgs: List<Any>,
         callback: ((Int) -> Unit)? = null
     ) {
+        if (!isEnabled) {
+            PLog.info("log.info.mysql_disabled")
+            callback?.invoke(-1)
+            return
+        }
+
         val cacheKey = "$tableName:$where:${whereArgs.joinToString(":")}"
 
         // 先更新缓存
@@ -246,6 +279,12 @@ class MySQLManager(private val plugin: Luagin, private val yamlManager: YamlMana
         whereArgs: List<Any> = emptyList(),
         callback: ((List<Map<String, Any>>) -> Unit)? = null
     ) {
+        if (!isEnabled) {
+            PLog.info("log.info.mysql_disabled")
+            callback?.invoke(emptyList())
+            return
+        }
+
         val cacheKey = "$tableName:${columns.joinToString(":")}:$where:${whereArgs.joinToString(":")}"
 
         // 先检查缓存

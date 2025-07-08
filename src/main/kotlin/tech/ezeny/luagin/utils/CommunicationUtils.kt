@@ -1,34 +1,36 @@
 package tech.ezeny.luagin.utils
 
-import org.luaj.vm2.LuaFunction
-import org.luaj.vm2.LuaTable
-import org.luaj.vm2.LuaValue
-import org.luaj.vm2.Varargs
+import party.iroiro.luajava.Lua
+import party.iroiro.luajava.luajit.LuaJitConsts.LUA_REGISTRYINDEX
 import java.util.concurrent.ConcurrentHashMap
 
 object CommunicationUtils {
-    // 存储暴露的函数
-    private val exposedFunctions = ConcurrentHashMap<String, MutableMap<String, LuaFunction>>()
+    // 存储暴露的函数引用
+    private val exposedFunctions = ConcurrentHashMap<String, MutableMap<String, Int>>()
+    // 存储 Lua 实例引用
+    private val luaInstances = ConcurrentHashMap<String, Lua>()
 
     /**
      * 暴露函数
      *
      * @param functionName 函数名
-     * @param function 函数对象
+     * @param functionRef 函数引用
      * @return 是否成功
      */
-    fun exposeFunction(functionName: String, function: LuaFunction): Boolean {
+    fun exposeFunction(functionName: String, functionRef: Int): Boolean {
         val scriptName = ScriptUtils.getCurrentScript() ?: return false
+        val lua = ScriptUtils.getCurrentLua() ?: return false
 
         if (scriptName.isEmpty()) return false
 
         // 获取当前脚本的函数映射，如果不存在则创建
         val scriptFunctions = exposedFunctions.computeIfAbsent(scriptName) {
-            ConcurrentHashMap<String, LuaFunction>()
+            ConcurrentHashMap<String, Int>()
         }
 
-        // 存储函数
-        scriptFunctions[functionName] = function
+        // 存储函数引用和 Lua 实例
+        scriptFunctions[functionName] = functionRef
+        luaInstances[scriptName] = lua
         return true
     }
 
@@ -46,7 +48,12 @@ object CommunicationUtils {
         // 获取当前脚本的函数映射
         val scriptFunctions = exposedFunctions[scriptName]
         if (scriptFunctions != null && scriptFunctions.containsKey(functionName)) {
-            scriptFunctions.remove(functionName)
+            val functionRef = scriptFunctions.remove(functionName)
+            // 释放函数引用
+            val lua = luaInstances[scriptName]
+            if (lua != null && functionRef != null) {
+                lua.unref(functionRef)
+            }
             return true
         }
 
@@ -61,24 +68,50 @@ object CommunicationUtils {
      * @param args 参数
      * @return 函数返回值
      */
-    fun callFunction(scriptName: String, functionName: String, args: Varargs): Varargs {
+    fun callFunction(scriptName: String, functionName: String, args: List<Any?>): Any? {
         // 获取目标脚本的函数映射
         val scriptFunctions = exposedFunctions[scriptName]
         if (scriptFunctions == null) {
             PLog.warning("log.warning.script_not_found", scriptName)
-            return LuaValue.NIL
+            return null
         }
 
-        // 获取目标函数
-        val function = scriptFunctions[functionName]
-        if (function == null) {
+        // 获取目标函数引用
+        val functionRef = scriptFunctions[functionName]
+        if (functionRef == null) {
             PLog.warning("log.warning.function_not_found", scriptName, functionName)
-            return LuaValue.NIL
+            return null
+        }
+
+        // 获取对应的Lua实例
+        val lua = luaInstances[scriptName]
+        if (lua == null) {
+            PLog.warning("log.warning.lua_instance_not_found", scriptName)
+            return null
         }
 
         // 调用函数并返回结果
         return try {
-            function.invoke(args)
+            lua.rawGetI(LUA_REGISTRYINDEX, functionRef)
+            args.forEach { arg ->
+                when (arg) {
+                    null -> lua.pushNil()
+                    is String -> lua.push(arg)
+                    is Boolean -> lua.push(arg)
+                    is Int -> lua.push(arg.toLong())
+                    is Long -> lua.push(arg)
+                    is Float -> lua.push(arg.toDouble())
+                    is Double -> lua.push(arg)
+                    is Number -> lua.push(arg)
+                    is Collection<*> -> lua.push(arg)
+                    is Map<*, *> -> lua.push(arg)
+                    else -> lua.pushJavaObject(arg)
+                }
+            }
+            lua.pCall(args.size, 1)
+            val result = lua.toJavaObject(-1)
+            lua.pop(1)
+            result
         } catch (e: Exception) {
             PLog.warning(
                 "log.warning.function_call_failed",
@@ -86,33 +119,20 @@ object CommunicationUtils {
                 functionName,
                 e.message ?: "Unknown error"
             )
-            LuaValue.NIL
+            null
         }
     }
 
     /**
      * 获取所有暴露的函数
      *
-     * @return 包含所有暴露函数信息的Lua表
+     * @return 包含所有暴露函数信息的 Map
      */
-    fun getExposedFunctions(): LuaTable {
-        val result = LuaTable()
-        var index = 1
-
+    fun getExposedFunctions(): Map<String, List<String>> {
+        val result = mutableMapOf<String, List<String>>()
         exposedFunctions.forEach { (scriptName, functions) ->
-            val scriptTable = LuaTable()
-            scriptTable.set("script", LuaValue.valueOf(scriptName))
-
-            val functionsTable = LuaTable()
-            var funcIndex = 1
-            functions.keys.forEach { functionName ->
-                functionsTable.set(funcIndex++, LuaValue.valueOf(functionName))
-            }
-
-            scriptTable.set("functions", functionsTable)
-            result.set(index++, scriptTable)
+            result[scriptName] = functions.keys.toList()
         }
-
         return result
     }
 
@@ -122,13 +142,30 @@ object CommunicationUtils {
      * @param scriptName 脚本名
      */
     fun clearScriptFunctions(scriptName: String) {
-        exposedFunctions.remove(scriptName)
+        val scriptFunctions = exposedFunctions.remove(scriptName)
+        val lua = luaInstances.remove(scriptName)
+
+        // 释放所有函数引用
+        if (scriptFunctions != null && lua != null) {
+            scriptFunctions.values.forEach { functionRef ->
+                lua.unref(functionRef)
+            }
+        }
     }
 
     /**
      * 清除所有脚本的暴露函数
      */
     fun clearAllFunctions() {
+        exposedFunctions.forEach { (scriptName, functions) ->
+            val lua = luaInstances[scriptName]
+            if (lua != null) {
+                functions.values.forEach { functionRef ->
+                    lua.unref(functionRef)
+                }
+            }
+        }
         exposedFunctions.clear()
+        luaInstances.clear()
     }
 }

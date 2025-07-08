@@ -1,28 +1,14 @@
 package tech.ezeny.luagin.lua
 
 import org.bukkit.command.CommandSender
-import org.bukkit.event.Cancellable
 import org.bukkit.event.Event
-import org.luaj.vm2.LuaTable
-import org.luaj.vm2.LuaUserdata
-import org.luaj.vm2.LuaValue
-import org.luaj.vm2.Varargs
-import org.luaj.vm2.lib.OneArgFunction
-import org.luaj.vm2.lib.VarArgFunction
-import org.luaj.vm2.lib.jse.CoerceJavaToLua
+import party.iroiro.luajava.Lua
 import tech.ezeny.luagin.utils.PLog
 import java.lang.reflect.Method
-import java.util.WeakHashMap
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.jvm.java
 
 object LuaValueFactory {
-    // 缓存对象到 LuaValue 的映射
-    private val objectLuaCache = WeakHashMap<Any, LuaValue>()
-
-    // 缓存 Class 到 Metatable 的映射
-    private val metatableCache = ConcurrentHashMap<Class<*>, LuaTable>()
-
     // 缓存 Class 到 getter/setter 方法
     private val getterCache = ConcurrentHashMap<Class<*>, Map<String, Method>>()
     private val setterCache = ConcurrentHashMap<Class<*>, Map<String, Method>>()
@@ -34,159 +20,187 @@ object LuaValueFactory {
     private val snakeToCamelCache = ConcurrentHashMap<String, String>()
 
     /**
-     * 将 Java 对象转换为 LuaValue
-     *
-     * @param obj 需要转换的 Java 对象
-     * @return 转换后的 LuaValue
+     * 将 Java 对象推送到 Lua 栈
      */
-    fun createLuaValue(obj: Any?): LuaValue {
-        if (obj == null) return LuaValue.NIL
-
-        // 创建自定义 Userdata
-        return when (obj) {
-            is Event, is CommandSender -> objectLuaCache.getOrPut(obj) { createCustomUserdata(obj) }
-            else -> CoerceJavaToLua.coerce(obj)
-        }
-    }
-
-    /**
-     * 为指定的 Java 对象创建自定义 LuaUserdata，并设置元表
-     *
-     * @param obj Java 对象
-     * @return 包装后的 LuaUserdata
-     */
-    private fun createCustomUserdata(obj: Any): LuaUserdata {
-        val userdata = LuaUserdata(obj)
-        val metatable = metatableCache.computeIfAbsent(obj.javaClass) { clazz ->
-            createMetatable(clazz)
-        }
-        userdata.setmetatable(metatable)
-        return userdata
-    }
-
-    /**
-     * 为 Java 类生成 Lua 用的元表
-     * 自动绑定 getter/setter 访问
-     *
-     * @param clazz Java 类对象
-     * @return 构建好的 LuaTable
-     */
-    private fun createMetatable(clazz: Class<*>): LuaTable {
-        val metatable = LuaTable()
-
-        // 获取 getter/setter
-        val getters = getGetterMethods(clazz)
-        val setters = getSetterMethods(clazz)
-
-        metatable.set(LuaValue.INDEX, object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                val self = args.arg1()
-                val key = args.arg(2).tojstring()
-
-                // 在 key 包含下划线时进行转换尝试
-                val camelCaseKey = if (key.contains('_')) snakeToCamel(key) else key
-
-                val javaObject = self.checkuserdata(Any::class.java) ?: return NIL
-
-                // 尝试查找 getter
-                val getterMethod = getters[camelCaseKey]
-                if (getterMethod != null) {
-                    return try {
-                        createLuaValue(getterMethod.invoke(javaObject))
-                    } catch (e: Exception) {
-                        PLog.warning("log.warning.getter_failed", camelCaseKey, e.message ?: "Unknown error")
-                        NIL
-                    }
-                }
-
-                // Cancellable 特判
-                if (key == "cancelled" && javaObject is Cancellable)
-                    return valueOf(javaObject.isCancelled)
-
-                // 尝试查找缓存或实时查找方法
-                val methods = getMethodsByName(clazz, camelCaseKey)
-
-                return if (methods.isNotEmpty()) {
-                    // 如果找到了方法，返回一个 Lua 函数来调用它
-                    object : VarArgFunction() {
-                        override fun invoke(callArgs: Varargs): Varargs {
-                            // 第一个参数是 self
-                            val callSelf = callArgs.arg1()
-                            val callJavaObject = callSelf.checkuserdata(Any::class.java) ?: return NIL
-
-                            // 尝试找到匹配的方法 (基于参数数量和类型)
-                            for (method in methods) {
-                                val paramCount = method.parameterCount
-                                if (callArgs.narg() - 1 == paramCount) {  // -1 是因为第一个参数是 self
-                                    val javaArgs = Array(paramCount) { i ->
-                                        val luaArg = callArgs.arg(i + 2)  // +2 是因为 arg 索引从1开始, 且跳过 self
-                                        // 尝试转换参数类型
-                                        coerceLuaToJava(luaArg, method.parameterTypes[i])
-                                            ?: throw IllegalArgumentException("Cannot coerce Lua value ${luaArg.typename()} to Java type ${method.parameterTypes[i].simpleName}")
-                                    }
-                                    val result = method.invoke(callJavaObject, *javaArgs)
-                                    return createLuaValue(result)
-                                }
-                            }
-                            // 如果没有找到完全匹配的重载方法
-                            PLog.warning("log.warning.method_not_match", camelCaseKey)
-                            return NIL
-                        }
-                    }
+    fun pushJavaObject(lua: Lua, obj: Any?) {
+        when (obj) {
+            null -> lua.pushNil()
+            is String -> lua.push(obj)
+            is Number -> lua.push(obj)
+            is Boolean -> lua.push(obj)
+            is Collection<*> -> lua.push(obj)
+            is Map<*, *> -> lua.push(obj)
+            is Enum<*> -> lua.push(obj.name)
+            is Event, is CommandSender -> {
+                createCustomUserdata(lua, obj)}
+            else -> {
+                val clazz = obj.javaClass
+                if (clazz.isPrimitive || clazz.isEnum || isPrimitiveWrapper(clazz) || isSimpleType(clazz)) {
+                    lua.push(obj.toString())
                 } else {
-                    // 如果 getter 和方法都没有找到
-                    PLog.warning("log.warning.method_not_found", camelCaseKey)
-                    NIL
+                    createCustomUserdata(lua, obj)
                 }
             }
-        })
-
-        metatable.set(LuaValue.NEWINDEX, object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                val self = args.arg1()
-                val key = args.arg(2).tojstring()
-                val value = args.arg(3)
-
-                val camelCaseKey = if (key.contains('_')) snakeToCamel(key) else key
-
-                val javaObject = self.checkuserdata(Any::class.java) ?: return NIL
-
-                val method = setters[camelCaseKey]
-
-                // 特殊处理 Cancellable 的 cancelled 字段
-                if (key == "cancelled" && javaObject is Cancellable) {
-                    javaObject.isCancelled = value.optboolean(false)
-                    return NIL
-                }
-
-                return try {
-                    if (method != null) {
-                        val paramType = method.parameterTypes[0]
-                        val javaValue = coerceLuaToJava(value, paramType)
-                        if (javaValue != null) {
-                            method.invoke(javaObject, javaValue)
-                        }
-                    }
-                    NIL
-                } catch (e: Exception) {
-                    PLog.warning("log.warning.setter_failed", camelCaseKey, e.message ?: "Unknown error")
-                    NIL
-                }
-            }
-        })
-
-        metatable.set(LuaValue.TOSTRING, object : OneArgFunction() {
-            override fun call(self: LuaValue): LuaValue {
-                val javaObject = self.checkuserdata(Any::class.java)
-                return valueOf("JavaObject<${javaObject?.javaClass?.simpleName ?: "null"}>@${javaObject?.hashCode() ?: 0}")
-            }
-        })
-
-        return metatable
+        }
     }
 
     /**
-     * 提取指定类中符合 getter 规范的方法（无参数、以 get/is 开头）
+     * 检查是否为基本类型包装类
+     */
+    private fun isPrimitiveWrapper(clazz: Class<*>): Boolean {
+        return clazz in setOf(
+            java.lang.Boolean::class.java,
+            java.lang.Byte::class.java,
+            Character::class.java,
+            java.lang.Short::class.java,
+            Integer::class.java,
+            java.lang.Long::class.java,
+            java.lang.Float::class.java,
+            java.lang.Double::class.java
+        )
+    }
+
+    /**
+     * 检查是否为简单类型（通过类名判断）
+     */
+    private fun isSimpleType(clazz: Class<*>): Boolean {
+        val simpleName = clazz.simpleName
+        return simpleName.endsWith("Type") || simpleName.endsWith("Material")
+    }
+
+    /**
+     * 为指定的 Java 对象创建自定义 userdata，并设置元表
+     */
+    private fun createCustomUserdata(lua: Lua, obj: Any) {
+        // 创建一个 userdata 来存储对象引用
+        lua.newTable()
+        lua.pushJavaObject(obj)
+        lua.setField(-2, "__obj")
+
+        // 创建元表
+        lua.newTable()
+
+        // 设置 __index 元方法
+        lua.push { luaState ->
+            // 从表中获取原始对象
+            luaState.getField(1, "__obj")
+            val self = luaState.toJavaObject(-1)
+            luaState.pop(1) // 清理栈
+
+            val key = luaState.toString(2) ?: return@push 0
+
+            if (self == null) {
+                PLog.warning("log.warning.object_is_null", key)
+                luaState.pushNil()
+                return@push 1
+            }
+
+            // 驼峰命名法和蛇形命名法转换
+            val camelKey = snakeToCamel(key)
+            val getters = getGetterMethods(self.javaClass)
+
+            // 尝试作为属性访问（getter）
+            val getterMethod = getters[key] ?: getters[camelKey]
+            if (getterMethod != null) {
+                try {
+                    val result = getterMethod.invoke(self)
+                    pushJavaObject(luaState, result)
+                    return@push 1
+                } catch (e: Exception) {
+                    PLog.warning("log.warning.getter_failed", key, e.message ?: "Unknown error")
+                    luaState.pushNil()
+                    return@push 1
+                }
+            }
+
+            // 尝试作为方法访问，返回一个可调用的函数
+            val methods = getMethodsByName(self.javaClass, key) + getMethodsByName(self.javaClass, camelKey)
+            if (methods.isNotEmpty()) {
+                // 返回一个 Lua 函数
+                luaState.push { callState ->
+                    val totalArgs = callState.top
+                    val argCount = if (totalArgs > 0) totalArgs - 1 else 0
+
+                    // 查找匹配的方法
+                    val matchingMethod = methods.firstOrNull { it.parameterCount == argCount }
+
+                    if (matchingMethod != null) {
+                        try {
+                            val result = if (argCount == 0) {
+                                matchingMethod.invoke(self)
+                            } else {
+                                val args = Array(argCount) { i -> callState.toJavaObject(i + 2) }
+                                matchingMethod.invoke(self, *args)
+                            }
+                            pushJavaObject(callState, result)
+                            return@push 1
+                        } catch (e: Exception) {
+                            PLog.warning("log.warning.method_call_failed", key, e.message ?: "Unknown error")
+                            callState.pushNil()
+                            return@push 1
+                        }
+                    } else {
+                        PLog.warning("log.warning.no_matching_method", key)
+                        callState.pushNil()
+                        return@push 1
+                    }
+                }
+                return@push 1
+            }
+
+            PLog.warning("log.warning.method_not_found", key)
+            luaState.pushNil()
+            return@push 1
+        }
+        lua.setField(-2, "__index")
+
+        // 设置 __newindex 元方法
+        lua.push { luaState ->
+            // 从表中获取原始对象
+            luaState.getField(1, "__obj")
+            val self = luaState.toJavaObject(-1)
+            luaState.pop(1)
+
+            val key = luaState.toString(2) ?: return@push 0
+
+            if (self == null) return@push 0
+
+            // 支持驼峰命名法和蛇形命名法转换
+            val camelKey = snakeToCamel(key)
+            val setters = getSetterMethods(self.javaClass)
+
+            val setterMethod = setters[key] ?: setters[camelKey]
+            if (setterMethod != null) {
+                try {
+                    val value = coerceLuaToJava(luaState, 3, setterMethod.parameterTypes[0])
+                    setterMethod.invoke(self, value)
+                } catch (e: Exception) {
+                    PLog.warning("log.warning.setter_failed", key, e.message ?: "Unknown error")
+                }
+            }
+
+            return@push 0
+        }
+        lua.setField(-2, "__newindex")
+
+        // 设置 __tostring 元方法
+        lua.push { luaState ->
+            // 从表中获取原始对象
+            luaState.getField(1, "__obj")
+            val self = luaState.toJavaObject(-1)
+            luaState.pop(1)
+
+            luaState.push("JavaObject<${self?.javaClass?.simpleName ?: "null"}>@${self?.hashCode() ?: 0}")
+            return@push 1
+        }
+        lua.setField(-2, "__tostring")
+
+        // 设置元表
+        lua.setMetatable(-2)
+    }
+
+    /**
+     * 提取指定类中符合 getter 规范的方法
      * 映射字段名到对应 Method
      *
      * @param clazz Java 类
@@ -205,7 +219,7 @@ object LuaValueFactory {
     }
 
     /**
-     * 提取指定类中符合 setter 规范的方法（一个参数、以 set 开头）
+     * 提取指定类中符合 setter 规范的方法
      * 映射字段名到对应 Method
      *
      * @param clazz Java 类
@@ -234,22 +248,21 @@ object LuaValueFactory {
     }
 
     /**
-     * 将 LuaValue 根据目标 Java 类型进行强制类型转换
-     * 支持基本类型和 userdata
-     *
-     * @param value LuaValue
-     * @param targetType Java 目标类型
-     * @return 转换后的 Java 对象，或 null（不支持的类型）
+     * 将Lua值转换为Java对象
      */
-    private fun coerceLuaToJava(value: LuaValue, targetType: Class<*>): Any? = when {
-        value.isboolean() && (targetType == Boolean::class.java || targetType == Boolean::class.javaPrimitiveType) -> value.toboolean()
-        value.isint() && (targetType == Int::class.java || targetType == Int::class.javaPrimitiveType) -> value.toint()
-        value.islong() && (targetType == Long::class.java || targetType == Long::class.javaPrimitiveType) -> value.tolong()
-        value.isnumber() && (targetType == Float::class.java || targetType == Float::class.javaPrimitiveType) -> value.tofloat()
-        value.isnumber() && (targetType == Double::class.java || targetType == Double::class.javaPrimitiveType) -> value.todouble()
-        value.isstring() && targetType == String::class.java -> value.tojstring()
-        value.isuserdata() && targetType.isAssignableFrom(value.touserdata()::class.java) -> value.touserdata()
-        else -> null
+    private fun coerceLuaToJava(lua: Lua, index: Int, targetType: Class<*>): Any? {
+        return when (targetType) {
+            Boolean::class.java, Boolean::class.javaPrimitiveType -> lua.toBoolean(index)
+            Int::class.java, Int::class.javaPrimitiveType -> lua.toInteger(index)
+            Long::class.java, Long::class.javaPrimitiveType -> lua.toInteger(index)
+            Float::class.java, Float::class.javaPrimitiveType -> lua.toNumber(index).toFloat()
+            Double::class.java, Double::class.javaPrimitiveType -> lua.toNumber(index)
+            String::class.java -> lua.toString(index)
+            else -> {
+                val obj = lua.toJavaObject(index)
+                if (obj != null && targetType.isAssignableFrom(obj.javaClass)) obj else null
+            }
+        }
     }
 
     /**
@@ -257,21 +270,23 @@ object LuaValueFactory {
      */
     private fun snakeToCamel(input: String): String {
         return snakeToCamelCache.computeIfAbsent(input) { key ->
-            val parts = key.split('_')
-            if (parts.size <= 1) {
-                return@computeIfAbsent key
-            }
-            val builder = StringBuilder(parts[0])
-            for (i in 1 until parts.size) {
-                val part = parts[i]
-                if (part.isNotEmpty()) {
-                    builder.append(part.substring(0, 1).uppercase())
-                    if (part.length > 1) {
-                        builder.append(part.substring(1))
+            if ('_' !in key) return@computeIfAbsent key
+
+            val result = StringBuilder(key.length)
+            var capitalizeNext = false
+
+            for (char in key) {
+                when {
+                    char == '_' -> capitalizeNext = true
+                    capitalizeNext -> {
+                        result.append(char.uppercaseChar())
+                        capitalizeNext = false
                     }
+
+                    else -> result.append(char)
                 }
             }
-            builder.toString()
+            result.toString()
         }
     }
 }

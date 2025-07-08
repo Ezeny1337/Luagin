@@ -21,14 +21,15 @@
 
 ### 🚀 Advantages
 
-|Features|Advantages|
-|---|---|
-|Kotlin Implementation|More concise, modern and secure syntax features.|
-|Friendly API design|High encapsulation, fluent chainable calls, excellent readability. More convenient Java object interaction.|
-|Friendly API docs|Easy to read, professional API docs.|
-|Inter-script communication|Be competent for large and complex plugin development, even more modular.|
-|Koin DI framework and modular design|High cohesion and low coupling. High readability and maintainability.|
-|Translation|Language configs in different countries or regions that can be contributed by the community.|
+| Features                             | Advantages                                                                                                  |
+|--------------------------------------|-------------------------------------------------------------------------------------------------------------|
+| Kotlin Implementation                | More concise, modern and secure syntax features.                                                            |
+| LuaJIT Implementation                | Extremely high running speed, complete support for Lua features, and support for bit and FFI libraries.     |
+| Friendly API design                  | High encapsulation, fluent chainable calls, excellent readability. More convenient Java object interaction. |
+| Friendly API docs                    | Easy to read, professional API docs.                                                                        |
+| Inter-script communication           | Be competent for large and complex plugin development, even more modular.                                   |
+| Koin DI framework and modular design | High cohesion and low coupling. High readability and maintainability.                                       |
+| Translation                          | Language configs in different countries or regions that can be contributed by the community.                |
 
 ### ❓ Why Lua
 
@@ -36,7 +37,7 @@
 2. **Efficient**: With Luagin, you **don't need** to build and manage **complex projects**, write **extensive boilerplate code**, or navigate through **hard-to-read APIs**, like you would when developing Java plugins.
 3. **Hot update**: **Reloading** scripts takes effect immediately, greatly improving the development experience and reducing the cost of trial and error.
 4. **Security**: Lua scripts run in a **controlled environment**, making it highly unlikely for them to crash the server or cause other serious issues.
-5. **Inter-script communication**: You can **call functions** between Lua scripts through Luagin. This means that it is competent for **large and complex** plugin development, and even more modular.
+5. **FFI Library**: Through LuaJIT's FFI library, you can directly interact with C, and **perform underlying system operations**.
 
 ## 📚 Documents
 

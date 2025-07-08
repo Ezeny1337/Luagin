@@ -5,10 +5,13 @@ plugins {
 }
 
 group = "tech.ezeny"
-version = "1.1"
+version = "2.0.0-beta.1"
 
 repositories {
     mavenCentral()
+    maven("https://jitpack.io") {
+        name = "jitpack"
+    }
     maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/") {
         name = "spigotmc-repo"
     }
@@ -18,9 +21,11 @@ repositories {
 }
 
 dependencies {
-    compileOnly("org.spigotmc:spigot-api:1.21.5-R0.1-SNAPSHOT")
+    compileOnly("org.spigotmc:spigot-api:1.21.7-R0.1-SNAPSHOT")
+    implementation("party.iroiro.luajava:luajava:4.0.2")
+    implementation("party.iroiro.luajava:luajit:4.0.2")
+    runtimeOnly("party.iroiro.luajava:luajit-platform:4.0.2:natives-desktop")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("org.luaj:luaj-jse:3.0.1")
     implementation("io.insert-koin:koin-core:4.0.4")
     implementation("com.zaxxer:HikariCP:6.3.0")
     implementation("com.mysql:mysql-connector-j:9.3.0")
@@ -48,7 +53,6 @@ tasks {
     shadowJar {
         archiveClassifier.set("")
         minimize()
-        relocate("org.luaj", "tech.ezeny.luagin.shadow.luaj")
     }
 
     runServer {

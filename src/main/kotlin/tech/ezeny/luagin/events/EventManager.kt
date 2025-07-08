@@ -4,15 +4,12 @@ import org.bukkit.event.Event
 import org.bukkit.event.EventPriority
 import org.bukkit.event.HandlerList
 import org.bukkit.event.Listener
-import org.luaj.vm2.LuaError
-import org.luaj.vm2.LuaFunction
 import tech.ezeny.luagin.Luagin
 import tech.ezeny.luagin.utils.PLog
-import tech.ezeny.luagin.lua.LuaValueFactory
 
 class EventManager(private val plugin: Luagin) : Listener {
     // 存储 Lua 处理函数，按 Event 类分组
-    private val luaEventHandlers = mutableMapOf<Class<out Event>, MutableList<Pair<String, LuaFunction>>>()
+    private val luaEventHandlers = mutableMapOf<Class<out Event>, MutableList<Pair<String, LuaJITEventHandler>>>()
 
     // 跟踪已经为哪些 Event 类注册了 Bukkit 监听器
     private val registeredListenerTypes = mutableSetOf<Class<out Event>>()
@@ -86,7 +83,7 @@ class EventManager(private val plugin: Luagin) : Listener {
      * @param eventName 事件类的名称
      * @param handler Lua 事件处理函数
      */
-    fun registerLuaEventHandler(basePackage: String, eventName: String, handler: LuaFunction) {
+    fun registerLuaEventHandler(basePackage: String, eventName: String, handler: LuaJITEventHandler) {
         try {
             // 尝试加载事件类
             val eventClassName = "$basePackage.$eventName"
@@ -122,7 +119,7 @@ class EventManager(private val plugin: Luagin) : Listener {
             eventClass,
             this,
             EventPriority.NORMAL,
-            { _, event ->
+            { listener, event ->
                 if (eventClass.isInstance(event)) {
                     handleEvent(event)
                 }
@@ -141,14 +138,10 @@ class EventManager(private val plugin: Luagin) : Listener {
         val eventClass = event.javaClass
         val handlers = luaEventHandlers[eventClass] ?: return
 
-        // 将 Java 事件对象转换为 Lua 值
-        val luaEvent = LuaValueFactory.createLuaValue(event)
-
-        // 调用所有注册的 Lua 处理函数
         for ((scriptName, handler) in handlers) {
             try {
-                handler.call(luaEvent)
-            } catch (e: LuaError) {
+                handler.call(event)
+            } catch (e: Exception) {
                 PLog.warning("log.warning.handle_event_failed", scriptName, e.message ?: "Unknown error")
             }
         }

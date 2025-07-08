@@ -1,14 +1,14 @@
 package tech.ezeny.luagin.lua
 
-import org.luaj.vm2.Globals
-import org.luaj.vm2.lib.jse.JsePlatform
+import party.iroiro.luajava.Lua
+import party.iroiro.luajava.luajit.LuaJit
 import tech.ezeny.luagin.Luagin
 import tech.ezeny.luagin.utils.PLog
 import java.io.File
 
-class LuaEnvManager(plugin: Luagin,private val apiRegister: APIRegister) {
+class LuaEnvManager(plugin: Luagin, val apiRegister: APIRegister) {
 
-    lateinit var globals: Globals
+    lateinit var lua: Lua
         private set
     var scriptsFolder: File = File(plugin.dataFolder, "scripts")
 
@@ -19,7 +19,9 @@ class LuaEnvManager(plugin: Luagin,private val apiRegister: APIRegister) {
     }
 
     fun setEnvironment() {
-        globals = JsePlatform.standardGlobals()
+        lua = LuaJit()
+        lua.openLibraries()
+
         setupBasicEnvironment()
         PLog.info("log.info.set_environment")
     }
@@ -29,7 +31,7 @@ class LuaEnvManager(plugin: Luagin,private val apiRegister: APIRegister) {
      * 注册所有 API
      */
     private fun setupBasicEnvironment() {
-        apiRegister.registerAllAPIs(globals)
+        apiRegister.registerAllAPIs(lua)
     }
 
     private fun ensureScriptsFolderExists() {
@@ -42,4 +44,11 @@ class LuaEnvManager(plugin: Luagin,private val apiRegister: APIRegister) {
      * 获取已注册的 API 列表
      */
     fun getSharedAPIs(): List<String> = apiRegister.apiNames
+
+    /**
+     * 关闭 Lua 环境
+     */
+    fun close() {
+        lua.close()
+    }
 }

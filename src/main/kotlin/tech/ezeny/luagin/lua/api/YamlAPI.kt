@@ -2,11 +2,7 @@ package tech.ezeny.luagin.lua.api
 
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import org.luaj.vm2.Globals
-import org.luaj.vm2.LuaTable
-import org.luaj.vm2.LuaValue
-import org.luaj.vm2.Varargs
-import org.luaj.vm2.lib.VarArgFunction
+import party.iroiro.luajava.Lua
 import tech.ezeny.luagin.config.YamlManager
 import tech.ezeny.luagin.utils.PLog
 
@@ -14,96 +10,111 @@ object YamlAPI : LuaAPIProvider, KoinComponent {
     private val yamlManager: YamlManager by inject()
     private val apiNames = mutableListOf<String>()
 
-    override fun registerAPI(globals: Globals) {
+    override fun registerAPI(lua: Lua) {
         // 创建 yaml 表
-        val yamlTable = LuaTable()
-        globals.set("yaml", yamlTable)
+        lua.newTable()
 
         // 获取配置值
-        yamlTable.set("get", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 2 || !args.arg(1).isstring() || !args.arg(2).isstring()) {
-                    return NIL
-                }
-
-                val relativePath = args.checkjstring(1)
-                val key = args.checkjstring(2)
-
-                val config = yamlManager.getConfig(relativePath) ?: return NIL
-
-                if (!config.contains(key)) {
-                    return NIL
-                }
-
-                // 转换不同类型的值为 Lua 值
-                return when {
-                    config.isString(key) -> valueOf(config.getString(key))
-                    config.isInt(key) -> valueOf(config.getInt(key))
-                    config.isDouble(key) -> valueOf(config.getDouble(key))
-                    config.isBoolean(key) -> valueOf(config.getBoolean(key))
-                    config.isList(key) -> {
-                        val list = config.getList(key) ?: return NIL
-                        val luaTable = LuaTable()
-                        list.forEachIndexed { index, value ->
-                            luaTable.set(index + 1, when (value) {
-                                is String -> valueOf(value)
-                                is Int -> valueOf(value)
-                                is Boolean -> valueOf(value)
-                                is Double -> valueOf(value)
-                                else -> valueOf(value.toString())
-                            })
-                        }
-                        luaTable
-                    }
-                    else -> NIL
-                }
+        lua.push { luaState ->
+            if (luaState.top < 2) {
+                luaState.pushNil()
+                return@push 1
             }
-        })
+
+            val relativePath = luaState.toString(1) ?: ""
+            val key = luaState.toString(2) ?: ""
+
+            val config = yamlManager.getConfig(relativePath)
+            if (config == null) {
+                luaState.pushNil()
+                return@push 1
+            }
+
+            if (!config.contains(key)) {
+                luaState.pushNil()
+                return@push 1
+            }
+
+            // 转换不同类型的值为 Lua 值
+            when {
+                config.isString(key) -> luaState.push(config.getString(key) ?: "")
+                config.isInt(key) -> luaState.push(config.getInt(key).toLong())
+                config.isDouble(key) -> luaState.push(config.getDouble(key))
+                config.isBoolean(key) -> luaState.push(config.getBoolean(key))
+                config.isList(key) -> {
+                    val list = config.getList(key)
+                    if (list != null) {
+                        luaState.newTable()
+                        list.forEachIndexed { index, value ->
+                            when (value) {
+                                is String -> luaState.push(value)
+                                is Int -> luaState.push(value.toLong())
+                                is Boolean -> luaState.push(value)
+                                is Double -> luaState.push(value)
+                                else -> luaState.push(value.toString())
+                            }
+                            luaState.rawSetI(-2, index + 1)
+                        }
+                    } else {
+                        luaState.pushNil()
+                    }
+                }
+                else -> luaState.pushNil()
+            }
+            return@push 1
+        }
+        lua.setField(-2, "get")
         
         // 设置配置值
-        yamlTable.set("set", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 3 || !args.arg(1).isstring() || !args.arg(2).isstring()) {
-                    return valueOf(false)
-                }
-
-                val relativePath = args.checkjstring(1)
-                val key = args.checkjstring(2)
-                val value = args.arg(3)
-
-                val config = yamlManager.getConfig(relativePath) ?: return valueOf(false)
-
-                // 递归处理 Lua 表
-                fun convertToYaml(value: LuaValue): Any {
-                    return when {
-                        value.isnil() -> ""
-                        value.isstring() -> value.tojstring()
-                        value.isint() -> value.toint()
-                        value.isnumber() -> value.todouble()
-                        value.isboolean() -> value.toboolean()
-                        value.istable() -> {
-                            val map = mutableMapOf<String, Any>()
-                            var i = 1
-                            while (true) {
-                                val item = value.get(i)
-                                if (item.isnil()) break
-                                map["$i"] = convertToYaml(item)
-                                i++
-                            }
-                            map
-                        }
-                        else -> value.tojstring()
-                    }
-                }
-
-                // 转换 Lua 值为 YAML 支持的类型
-                config.set(key, convertToYaml(value))
-
-                // 自动保存配置文件
-                val success = yamlManager.saveConfig(relativePath)
-                return valueOf(success)
+        lua.push { luaState ->
+            if (luaState.top < 3) {
+                luaState.push(false)
+                return@push 1
             }
-        })
+
+            val relativePath = luaState.toString(1) ?: ""
+            val key = luaState.toString(2) ?: ""
+
+            val config = yamlManager.getConfig(relativePath)
+            if (config == null) {
+                luaState.push(false)
+                return@push 1
+            }
+
+            // 递归处理 Lua 表
+            fun convertToYaml(index: Int): Any {
+                return when {
+                    luaState.isNil(index) -> ""
+                    luaState.isString(index) -> luaState.toString(index) ?: ""
+                    luaState.isInteger(index) -> luaState.toInteger(index)
+                    luaState.isNumber(index) -> luaState.toNumber(index)
+                    luaState.isBoolean(index) -> luaState.toBoolean(index)
+                    luaState.isTable(index) -> {
+                        val map = mutableMapOf<String, Any>()
+                        luaState.pushNil()
+                        while (luaState.next(index) != 0) {
+                            val keyStr = luaState.toString(-2) ?: ""
+                            val value = convertToYaml(-1)
+                            map[keyStr] = value
+                            luaState.pop(1)
+                        }
+                        map
+                    }
+                    else -> luaState.toString(index) ?: ""
+                }
+            }
+
+            // 转换 Lua 值为 YAML 支持的类型
+            config.set(key, convertToYaml(3))
+
+            // 自动保存配置文件
+            val success = yamlManager.saveConfig(relativePath)
+            luaState.push(success)
+            return@push 1
+        }
+        lua.setField(-2, "set")
+
+        lua.setGlobal("yaml")
         
         // 添加到 API 名称列表
         if (!apiNames.contains("yaml")) {

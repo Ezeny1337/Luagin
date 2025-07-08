@@ -4,9 +4,8 @@ import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.entity.Player
-import org.luaj.vm2.LuaFunction
-import org.luaj.vm2.LuaTable
-import org.luaj.vm2.LuaValue
+import party.iroiro.luajava.Lua
+import party.iroiro.luajava.luajit.LuaJitConsts.LUA_REGISTRYINDEX
 import tech.ezeny.luagin.lua.LuaValueFactory
 import tech.ezeny.luagin.permissions.PermissionManager
 import tech.ezeny.luagin.utils.PLog
@@ -14,7 +13,8 @@ import tech.ezeny.luagin.utils.PLog
 class LuaCommand(
     name: String,
     private val requiredPermission: String,
-    private val handler: LuaFunction,
+    private val lua: Lua,
+    private val handlerRef: Int,
     private val commandManager: CommandManager,
     private val permissionManager: PermissionManager
 ) : Command(name) {
@@ -67,20 +67,26 @@ class LuaCommand(
             }
         }
 
-        // 创建 Lua 参数表
-        val luaArgs = LuaTable()
+        // 推送 handler 到栈顶
+        lua.rawGetI(LUA_REGISTRYINDEX, handlerRef)
+        // 推送 sender
+        LuaValueFactory.pushJavaObject(lua, sender)
+        // 推送 args table
+        lua.newTable()
         args.forEachIndexed { index, arg ->
-            luaArgs.set(index + 1, LuaValue.valueOf(arg))
+            lua.push((index + 1).toLong())
+            lua.push(arg)
+            lua.setTable(-3)
         }
-
-        val luaSender = LuaValueFactory.createLuaValue(sender)
-
-        // 调用Lua处理函数
-        try {
-            return handler.call(luaSender, luaArgs).toboolean()
+        // 调用
+        return try {
+            lua.pCall(2, 1)
+            val result = lua.toBoolean(-1)
+            lua.pop(1)
+            result
         } catch (e: Exception) {
             PLog.warning("log.warning.execute_command_failed", name, e.message ?: "Unknown error")
-            return false
+            false
         }
     }
 

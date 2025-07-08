@@ -3,14 +3,11 @@ package tech.ezeny.luagin.lua.api
 import org.bukkit.Bukkit
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import org.luaj.vm2.Globals
-import org.luaj.vm2.LuaTable
-import org.luaj.vm2.Varargs
-import org.luaj.vm2.lib.VarArgFunction
 import tech.ezeny.luagin.Luagin
 import tech.ezeny.luagin.commands.CommandManager
+import party.iroiro.luajava.Lua
+import party.iroiro.luajava.luajit.LuaJitConsts.LUA_REGISTRYINDEX
 import tech.ezeny.luagin.commands.LuaCommand
-import tech.ezeny.luagin.utils.PLog
 
 object CommandAPI : LuaAPIProvider, KoinComponent {
     private lateinit var plugin: Luagin
@@ -21,59 +18,54 @@ object CommandAPI : LuaAPIProvider, KoinComponent {
         this.plugin = plugin
     }
 
-    override fun registerAPI(globals: Globals) {
-        // 创建 command 表
-        val commandTable = LuaTable()
-        globals.set("command", commandTable)
+    override fun registerAPI(lua: Lua) {
+        // 创建 cmd 表
+        lua.newTable()
 
-        // 注册命令
-        commandTable.set("register", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 3 || !args.arg(1).isstring() || !args.arg(2).isstring() || !args.arg(3)
-                        .isfunction()
-                ) {
-                    return NIL
-                }
-
-                val commandName = args.checkjstring(1)
-                val permission = args.checkjstring(2)
-                val handler = args.checkfunction(3)
-
-                val command = commandManager.registerCommand(commandName, permission, handler)
-
-                // 创建 Lua 命令包装器
-                val luaCommand = LuaCommandWrapper(command)
-                return luaCommand
+        // register 函数
+        lua.push { luaState ->
+            if (luaState.top < 3 || !luaState.isString(1) || !luaState.isString(2) || !luaState.isFunction(3)) {
+                return@push 0
             }
-        })
-
-        // 注册 exec 函数
-        commandTable.set("exec", object : VarArgFunction() {
-            override fun invoke(args: Varargs): Varargs {
-                if (args.narg() < 1 || !args.arg(1).isstring()) {
-                    return NIL
-                }
-
-                val command = args.checkjstring(1)
-
-                runOnMainThread {
-                    try {
-                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command)
-                    } catch (e: Exception) {
-                        PLog.warning("log.warning.command_exec_failed", command, e.message ?: "Unknown error")
-                    }
-                }
-
-                return NIL
-            }
-        })
-
-        // 添加到 API 名称列表
-        if (!apiNames.contains("command")) {
-            apiNames.add("command")
+            val commandName = luaState.toString(1) ?: return@push 0
+            val permission = luaState.toString(2) ?: ""
+            // handler ref
+            luaState.pushValue(3)
+            val handlerRef = luaState.ref(LUA_REGISTRYINDEX)
+            val command = commandManager.registerCommand(commandName, permission, lua, handlerRef)
+            // 返回 LuaCommandWrapper
+            LuaCommandWrapper.pushToLua(luaState, command)
+            return@push 1
         }
+        lua.setField(-2, "register")
 
-        PLog.info("log.info.command_api_set")
+        // exec 函数
+        lua.push { luaState ->
+            if (luaState.top < 1 || !luaState.isString(1)) {
+                return@push 0
+            }
+            val command = luaState.toString(1) ?: return@push 0
+            tech.ezeny.luagin.utils.PLog.info("log.info.command_exec", command)
+            Bukkit.getScheduler().runTask(plugin, Runnable {
+                try {
+                    Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command)
+                } catch (e: Exception) {
+                    tech.ezeny.luagin.utils.PLog.warning(
+                        "log.warning.command_exec_failed",
+                        command,
+                        e.message ?: "Unknown error"
+                    )
+                }
+            })
+            return@push 0
+        }
+        lua.setField(-2, "exec")
+
+        lua.setGlobal("cmd")
+        if (!apiNames.contains("cmd")) {
+            apiNames.add("cmd")
+        }
+        tech.ezeny.luagin.utils.PLog.info("log.info.command_api_set")
     }
 
     override fun getAPINames(): List<String> = apiNames
@@ -81,84 +73,52 @@ object CommandAPI : LuaAPIProvider, KoinComponent {
     /**
      * Lua命令包装器
      */
-    class LuaCommandWrapper(private val command: LuaCommand) : LuaTable() {
-        init {
-            // 添加命令参数提示（不指定前置参数）
-            set("add_args", object : VarArgFunction() {
-                override fun invoke(args: Varargs): Varargs {
-                    // 第一个参数是 self
-                    if (args.narg() < 3 || !args.arg(2).isnumber() || !args.arg(3).istable()) {
-                        return this@LuaCommandWrapper
-                    }
+    class LuaCommandWrapper() {
+        companion object {
+            fun pushToLua(lua: Lua, command: LuaCommand) {
+                lua.newTable()
 
-                    val position = args.checkint(2)
-                    val argsTable = args.checktable(3)
+                // add_args
+                lua.push { luaState ->
+                    if (luaState.top < 3 || !luaState.isNumber(2) || !luaState.isTable(3)) {
+                        return@push 1
+                    }
+                    val position = luaState.toInteger(2).toInt()
                     val argsList = mutableListOf<String>()
-
-                    // 解析参数列表
-                    var i = 1
-                    while (true) {
-                        val arg = argsTable.get(i)
-                        if (arg.isnil()) break
-                        if (arg.isstring()) {
-                            argsList.add(arg.tojstring())
+                    luaState.pushNil()
+                    while (luaState.next(3) != 0) {
+                        if (luaState.isString(-1)) {
+                            argsList.add(luaState.toString(-1) ?: "")
                         }
-                        i++
+                        luaState.pop(1)
                     }
-
-                    // 检查是否提供了权限参数
-                    val permission = if (args.narg() > 3 && args.arg(4).isstring()) {
-                        args.checkjstring(4)
-                    } else {
-                        ""  // 默认为空，表示使用上级权限
-                    }
-
+                    val permission = if (luaState.top > 3 && luaState.isString(4)) luaState.toString(4) ?: "" else ""
                     command.addArgs(position, argsList, permission)
-                    return this@LuaCommandWrapper
+                    return@push 1
                 }
-            })
+                lua.setField(-2, "add_args")
 
-            // 添加命令参数提示（指定前置参数）
-            set("add_args_for", object : VarArgFunction() {
-                override fun invoke(args: Varargs): Varargs {
-                    // 第一个参数是 self
-                    if (args.narg() < 4 || !args.arg(2).isnumber() || !args.arg(3).isstring() || !args.arg(4)
-                            .istable()
-                    ) {
-                        return this@LuaCommandWrapper
+                // add_args_for
+                lua.push { luaState ->
+                    if (luaState.top < 4 || !luaState.isNumber(2) || !luaState.isString(3) || !luaState.isTable(4)) {
+                        return@push 1
                     }
-
-                    val position = args.checkint(2)
-                    val previousArg = args.checkjstring(3)
-                    val argsTable = args.checktable(4)
+                    val position = luaState.toInteger(2).toInt()
+                    val previousArg = luaState.toString(3) ?: ""
                     val argsList = mutableListOf<String>()
-
-                    // 解析参数列表
-                    var i = 1
-                    while (true) {
-                        val arg = argsTable.get(i)
-                        if (arg.isnil()) break
-                        if (arg.isstring()) {
-                            argsList.add(arg.tojstring())
+                    luaState.pushNil()
+                    while (luaState.next(4) != 0) {
+                        if (luaState.isString(-1)) {
+                            argsList.add(luaState.toString(-1) ?: "")
                         }
-                        i++
+                        luaState.pop(1)
                     }
-
-                    // 检查是否提供了权限参数
-                    val permission = if (args.narg() > 4 && args.arg(5).isstring()) {
-                        args.checkjstring(5)
-                    } else {
-                        ""  // 默认为空，表示使用上级权限
-                    }
-
+                    val permission = if (luaState.top > 4 && luaState.isString(5)) luaState.toString(5) ?: "" else ""
                     command.addArgsForPrevious(position, argsList, previousArg, permission)
-                    return this@LuaCommandWrapper
+                    return@push 1
                 }
-            })
+                lua.setField(-2, "add_args_for")
+            }
         }
-    }
-
-    private fun runOnMainThread(runnable: Runnable) {
-        Bukkit.getScheduler().runTask(plugin, runnable)
     }
 }
