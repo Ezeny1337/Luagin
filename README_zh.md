@@ -1,12 +1,15 @@
-<h1 align="center">Luagin</h1>
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/a2bc8355-3bec-4bf2-ad99-7bc78924fcc4" alt="Luagin Logo" height="200" />
+</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Language-Kotlin-orange?logo=kotlin" />
   <img src="https://img.shields.io/badge/License-Apache%202.0-blue" />
+  <img src="https://img.shields.io/github/v/release/Ezeny1337/Luagin?label=Release&color=green" />
 </p>
 
 <p align="center">
-  📑 <a href="#-概述">概述</a> • <a href="#-文档">文档</a> • <a href="#%EF%B8%8F-支持">支持</a> • <a href="#%EF%B8%8F-许可">许可</a>
+  📑 <a href="#-概述">概述</a> • <a href="#-文档">文档</a> • <a href="#-兼容性">兼容性</a> • <a href="#%EF%B8%8F-支持">支持</a> • <a href="#%EF%B8%8F-许可">许可</a>
 </p>
 
 <p align="center">
@@ -45,6 +48,11 @@ https://ezeny.gitbook.io/luagin-docs
 
     由于没有足够的时间，目前文档只包含必要的信息，这意味着你需要在 Bukkit 文档中查找
     原始的类及其方法的相关信息
+
+## 🧪 兼容性
+
+- 支持的游戏版本取决于 **服务端 API**
+- 对 `Bukkit` 及其分支的支持取决于 `Spigot` API 在它们之间的兼容性 (**目前几乎兼容**)
 
 ## 🛠️ 支持
 
