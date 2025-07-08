@@ -1,12 +1,15 @@
-<h1 align="center">Luagin</h1>
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/a2bc8355-3bec-4bf2-ad99-7bc78924fcc4" alt="Luagin Logo" height="200" />
+</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Language-Kotlin-orange?logo=kotlin" />
   <img src="https://img.shields.io/badge/License-Apache%202.0-blue" />
+  <img src="https://img.shields.io/github/v/release/Ezeny1337/Luagin" />
 </p>
 
 <p align="center">
-  📑 <a href="#-overview">Overview</a> • <a href="#-documents">Documents</a> • <a href="#%EF%B8%8F-support">Support</a> • <a href="#%EF%B8%8F-license">License</a>
+  📑 <a href="#-overview">Overview</a> • <a href="#-documents">Documents</a> • <a href="#-compatibility">Compatibility</a> • <a href="#%EF%B8%8F-support">Support</a> • <a href="#%EF%B8%8F-license">License</a>
 </p>
 
 <p align="center">
@@ -46,6 +49,11 @@ https://ezeny.gitbook.io/luagin-docs
     Due to insufficient time, the document currently only contains necessary
     information, which means you need to search for relevant information about
     some classes and their methods in Bukkit's documentation.
+
+## 🧪 Compatibility
+
+- The supported game versions depend on the **server-side API**.
+- The support for `Bukkit` and its branches depends on the compatibility between the `Spigot` API and them. (**currently almost compatible**)
 
 ## 🛠️ Support
 
