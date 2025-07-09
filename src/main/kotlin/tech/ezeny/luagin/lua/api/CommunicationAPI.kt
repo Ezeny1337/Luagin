@@ -2,6 +2,7 @@ package tech.ezeny.luagin.lua.api
 
 import org.koin.core.component.KoinComponent
 import party.iroiro.luajava.Lua
+import tech.ezeny.luagin.lua.LuaValueFactory
 import tech.ezeny.luagin.utils.CommunicationUtils
 import tech.ezeny.luagin.utils.PLog
 
@@ -64,7 +65,7 @@ object CommunicationAPI : LuaAPIProvider, KoinComponent {
             // 收集额外参数
             val args = mutableListOf<Any?>()
             for (i in 3..luaState.top) {
-                args.add(luaState.toJavaObject(i))
+                args.add(LuaValueFactory.getLuaValue(luaState, i))
             }
 
             val result = CommunicationUtils.callFunction(scriptName, functionName, args)
@@ -94,13 +95,19 @@ object CommunicationAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "get_exposed_functions")
 
+        // 调试函数：打印所有暴露的函数信息
+        lua.push { luaState ->
+            CommunicationUtils.debugPrintExposedFunctions()
+            luaState.push(true)
+            return@push 1
+        }
+        lua.setField(-2, "debug_functions")
+
         lua.setGlobal("comm")
 
         if (!apiNames.contains("comm")) {
             apiNames.add("comm")
         }
-
-        PLog.info("log.info.comm_api_set")
     }
 
     override fun getAPINames(): List<String> = apiNames

@@ -353,8 +353,6 @@ object PermissionAPI : LuaAPIProvider, KoinComponent {
         if (!apiNames.contains("perm")) {
             apiNames.add("perm")
         }
-
-        PLog.info("log.info.permission_api_set")
     }
 
     override fun getAPINames(): List<String> = apiNames

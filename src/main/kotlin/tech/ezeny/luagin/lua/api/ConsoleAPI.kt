@@ -43,8 +43,6 @@ object ConsoleAPI : LuaAPIProvider {
         if (!apiNames.contains("print")) {
             apiNames.add("print")
         }
-
-        PLog.info("log.info.console_api_set")
     }
 
     override fun getAPINames(): List<String> = apiNames

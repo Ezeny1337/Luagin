@@ -4,6 +4,7 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import party.iroiro.luajava.Lua
 import tech.ezeny.luagin.config.YamlManager
+import tech.ezeny.luagin.lua.LuaValueFactory
 import tech.ezeny.luagin.utils.PLog
 
 object YamlAPI : LuaAPIProvider, KoinComponent {
@@ -46,13 +47,7 @@ object YamlAPI : LuaAPIProvider, KoinComponent {
                     if (list != null) {
                         luaState.newTable()
                         list.forEachIndexed { index, value ->
-                            when (value) {
-                                is String -> luaState.push(value)
-                                is Int -> luaState.push(value.toLong())
-                                is Boolean -> luaState.push(value)
-                                is Double -> luaState.push(value)
-                                else -> luaState.push(value.toString())
-                            }
+                            LuaValueFactory.pushJavaObject(luaState, value)
                             luaState.rawSetI(-2, index + 1)
                         }
                     } else {
@@ -120,8 +115,6 @@ object YamlAPI : LuaAPIProvider, KoinComponent {
         if (!apiNames.contains("yaml")) {
             apiNames.add("yaml")
         }
-        
-        PLog.info("log.info.yaml_api_set")
     }
     
     override fun getAPINames(): List<String> = apiNames

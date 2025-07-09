@@ -26,7 +26,7 @@ val pluginModules = module {
     single { EventManager(get()) }
     single { APIRegister(get()) }
     single { LuaEnvManager(get(), get()) }
-    single { ScriptManager(get(), get()) }
+    single { ScriptManager(get(), get(), get()) }
 }
 
 fun getKoinModules() {

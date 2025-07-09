@@ -9,6 +9,7 @@ import tech.ezeny.luagin.commands.LuaginCommandExecutor
 import tech.ezeny.luagin.di.getKoinModules
 import tech.ezeny.luagin.di.pluginModules
 import tech.ezeny.luagin.permissions.PermissionManager
+import tech.ezeny.luagin.utils.FileUtils
 import tech.ezeny.luagin.utils.PLog
 
 class Luagin : JavaPlugin() {

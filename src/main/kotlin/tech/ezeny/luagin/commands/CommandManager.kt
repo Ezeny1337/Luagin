@@ -20,7 +20,7 @@ class CommandManager(private val plugin: Luagin, private val permissionManager: 
     // 参数信息类，包含参数列表和权限
     data class ArgInfo(
         val args: List<String>,
-        val permission: String = ""  // 空字符串表示使用上级权限
+        val permission: String = ""  // 表示使用上级权限
     )
 
     // Bukkit 命令映射
@@ -50,7 +50,8 @@ class CommandManager(private val plugin: Luagin, private val permissionManager: 
     }
 
     /**
-     * 添加命令参数的Tab补全（不覆盖现有参数）
+     * 添加命令参数的 Tab 补全（不覆盖现有参数）
+     *
      * @param commandName 命令名
      * @param position 参数位置
      * @param arguments 补全参数列表
@@ -85,6 +86,11 @@ class CommandManager(private val plugin: Luagin, private val permissionManager: 
 
     /**
      * 递归查找参数的权限（用于补全和执行）
+     *
+     * @param command LuaCommand
+     * @param position 参数位置
+     * @param arg 补全参数
+     * @param previousArg 前一个位置的参数值
      */
     private fun resolvePermission(
         command: LuaCommand,
@@ -111,7 +117,8 @@ class CommandManager(private val plugin: Luagin, private val permissionManager: 
     }
 
     /**
-     * 获取命令的Tab补全
+     * 获取命令的 Tab 补全
+     *
      * @param commandName 命令名
      * @param position 当前参数位置
      * @param currentArg 当前正在输入的参数

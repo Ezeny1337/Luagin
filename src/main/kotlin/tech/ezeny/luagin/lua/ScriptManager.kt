@@ -2,7 +2,7 @@ package tech.ezeny.luagin.lua
 
 import party.iroiro.luajava.Lua
 import party.iroiro.luajava.LuaException
-import party.iroiro.luajava.luajit.LuaJit
+import tech.ezeny.luagin.Luagin
 import tech.ezeny.luagin.events.EventManager
 import tech.ezeny.luagin.utils.CommunicationUtils
 import tech.ezeny.luagin.utils.PLog
@@ -10,10 +10,11 @@ import tech.ezeny.luagin.utils.ScriptUtils
 import java.io.File
 
 class ScriptManager(
+    plugin: Luagin,
     private val eventManager: EventManager,
     private val luaEnvManager: LuaEnvManager
 ) {
-    private val scriptsFolder: File = luaEnvManager.scriptsFolder
+    private val scriptsFolder: File = File(plugin.dataFolder, "scripts")
     private val scriptEnvironments = mutableMapOf<String, Lua>()
 
     init {
@@ -38,8 +39,11 @@ class ScriptManager(
             return 0
         }
 
+        // 清理旧的脚本环境和函数引用
         scriptEnvironments.values.forEach { it.close() }
         scriptEnvironments.clear()
+        CommunicationUtils.clearAllFunctions()
+        
         var loadedCount = 0
 
         // 遍历脚本目录并加载所有 Lua 脚本
@@ -76,12 +80,15 @@ class ScriptManager(
 
         return try {
             ScriptUtils.setCurrentScript(scriptFile.name)
-            val scriptLua = createScriptEnvironment()
+            val scriptLua = luaEnvManager.createScriptEnvironment()
+            PLog.info("log.info.registered_lua_api", scriptFile.name)
+            
+            // 设置 Lua 实例
+            ScriptUtils.setCurrentLua(scriptFile.name, scriptLua)
 
             scriptLua.run(scriptFile.readText())
 
             scriptEnvironments[scriptFile.absolutePath] = scriptLua
-            ScriptUtils.setCurrentLua(scriptFile.name, scriptLua)
 
             PLog.info("log.info.loading_lua_succeeded", scriptFile.name)
             true
@@ -122,28 +129,6 @@ class ScriptManager(
         scriptEnvironments.remove(scriptFile.absolutePath)
 
         return loadScript(scriptFile)
-    }
-
-    /**
-     * 创建一个新的 Lua 环境
-     *
-     * @return Lua 脚本环境
-     */
-    private fun createScriptEnvironment(): Lua {
-        val lua = LuaJit()
-        lua.openLibraries()
-        copySharedAPIs(lua)
-        return lua
-    }
-
-    /**
-     * 将共享的 API 注册到新的脚本环境
-     *
-     * @param scriptLua 新创建的脚本环境
-     */
-    private fun copySharedAPIs(scriptLua: Lua) {
-        // 直接为脚本环境注册所有 API，而不是从主环境复制
-        luaEnvManager.apiRegister.registerAllAPIs(scriptLua)
     }
 
     fun listScripts(): List<String> {

@@ -78,6 +78,7 @@ class LuaCommand(
             lua.push(arg)
             lua.setTable(-3)
         }
+
         // 调用
         return try {
             lua.pCall(2, 1)

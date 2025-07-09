@@ -58,8 +58,6 @@ object EventsAPI : LuaAPIProvider, KoinComponent {
         if (!apiNames.contains("events")) {
             apiNames.add("events")
         }
-
-        PLog.info("log.info.events_api_set")
     }
 
     override fun getAPINames(): List<String> = apiNames

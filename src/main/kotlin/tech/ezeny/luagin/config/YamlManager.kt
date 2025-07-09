@@ -2,19 +2,24 @@ package tech.ezeny.luagin.config
 
 import org.bukkit.configuration.file.YamlConfiguration
 import tech.ezeny.luagin.Luagin
+import tech.ezeny.luagin.utils.FileUtils
 import tech.ezeny.luagin.utils.LanguageUtils
 import tech.ezeny.luagin.utils.PLog
 import java.io.File
 import java.io.IOException
 
-class YamlManager(private val plugin: Luagin) {
+class YamlManager(plugin: Luagin) {
     private val configCache = mutableMapOf<String, YamlConfiguration>()
     private val configFiles = mutableMapOf<String, File>()
 
     init {
+        // 初始化 FileUtils
+        FileUtils.initialize(plugin)
+        
         // 插件语言目录
-        val langFolder: File = File(plugin.dataFolder, "lang").apply {
-            if (!exists()) mkdirs()
+        val langFolder = FileUtils.getFile("lang")
+        if (!langFolder.exists()) {
+            FileUtils.createDirectory("lang")
         }
 
         LanguageUtils.createDefaultLanguageFiles(langFolder)
@@ -31,13 +36,13 @@ class YamlManager(private val plugin: Luagin) {
             "$relativePath.yml"
         } else {
             relativePath
-        }.replace("/", File.separator)
+        }
 
         if (configCache.containsKey(normalizedPath)) {
             return configCache[normalizedPath]
         }
 
-        val file = File(plugin.dataFolder, normalizedPath)
+        val file = FileUtils.getFile(normalizedPath)
 
         if (!file.exists()) {
             PLog.warning("config.not_found", normalizedPath)

@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets
 import java.util.concurrent.Executors
 
 class NetworkManager(private val plugin: Luagin) {
+    // 创建一个线程池用于异步请求
     private val executor = Executors.newFixedThreadPool(4)
 
     /**
@@ -20,6 +21,7 @@ class NetworkManager(private val plugin: Luagin) {
      * @param urlString 请求 URL
      * @param headers 请求头
      * @param callback 回调函数，接收响应结果
+     * @return 如果为同步调用，返回响应内容字符串；否则返回 null
      */
     fun doGetRequest(urlString: String, headers: Map<String, String>? = null, callback: ((String) -> Unit)? = null): String? {
         if (callback != null) {
@@ -42,9 +44,10 @@ class NetworkManager(private val plugin: Luagin) {
      * 执行 POST 请求
      *
      * @param urlString 请求 URL
-     * @param data 请求数据
+     * @param data 请求体
      * @param headers 请求头
      * @param callback 回调函数，接收响应结果
+     * @return 如果为同步调用，返回响应内容字符串；否则返回 null
      */
     fun doPostRequest(urlString: String, data: Map<String, Any>? = null, headers: Map<String, String>? = null, callback: ((String) -> Unit)? = null): String? {
         if (callback != null) {
@@ -65,6 +68,9 @@ class NetworkManager(private val plugin: Luagin) {
 
     /**
      * 执行 GET 请求的实际实现
+     * @param urlString 请求 URL
+     * @param headers 请求头
+     * @return 响应内容字符串
      */
     private fun executeGetRequest(urlString: String, headers: Map<String, String>?): String {
         return try {
@@ -97,6 +103,11 @@ class NetworkManager(private val plugin: Luagin) {
 
     /**
      * 执行 POST 请求的实际实现
+     *
+     * @param urlString 请求 URL
+     * @param data 请求体
+     * @param headers 请求头
+     * @return 响应内容字符串
      */
     private fun executePostRequest(urlString: String, data: Map<String, Any>?, headers: Map<String, String>?): String {
         return try {
@@ -137,6 +148,9 @@ class NetworkManager(private val plugin: Luagin) {
 
     /**
      * 读取响应内容
+     *
+     * @param connection 已连接的 HttpURLConnection
+     * @return 响应内容字符串
      */
     private fun readResponse(connection: HttpURLConnection): String {
         val reader = BufferedReader(InputStreamReader(connection.inputStream))

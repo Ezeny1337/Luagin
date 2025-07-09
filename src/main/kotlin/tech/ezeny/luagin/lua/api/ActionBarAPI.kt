@@ -49,8 +49,6 @@ object ActionBarAPI : LuaAPIProvider {
         if (!apiNames.contains("print_actionbar")) {
             apiNames.add("print_actionbar")
         }
-
-        PLog.info("log.info.actionbar_api_set")
     }
 
     override fun getAPINames(): List<String> = apiNames

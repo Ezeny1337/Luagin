@@ -45,6 +45,20 @@ object LuaValueFactory {
     }
 
     /**
+     * 从 Lua 栈获取值并转换为 Java 对象
+     */
+    fun getLuaValue(lua: Lua, index: Int): Any? {
+        return when {
+            lua.isNil(index) -> null
+            lua.isString(index) -> lua.toString(index)
+            lua.isBoolean(index) -> lua.toBoolean(index)
+            lua.isNumber(index) -> lua.toNumber(index)
+            lua.isTable(index) -> lua.toJavaObject(index)
+            else -> lua.toJavaObject(index)
+        }
+    }
+
+    /**
      * 检查是否为基本类型包装类
      */
     private fun isPrimitiveWrapper(clazz: Class<*>): Boolean {

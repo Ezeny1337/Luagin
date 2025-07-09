@@ -58,8 +58,6 @@ object TitleAPI : LuaAPIProvider {
         if (!apiNames.contains("print_title")) {
             apiNames.add("print_title")
         }
-
-        PLog.info("log.info.title_api_set")
     }
 
     override fun getAPINames(): List<String> = apiNames

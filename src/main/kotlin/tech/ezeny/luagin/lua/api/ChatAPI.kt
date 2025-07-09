@@ -49,8 +49,6 @@ object ChatAPI : LuaAPIProvider {
         if (!apiNames.contains("print_chat")) {
             apiNames.add("print_chat")
         }
-
-        PLog.info("log.info.chat_api_set")
     }
 
     override fun getAPINames(): List<String> = apiNames

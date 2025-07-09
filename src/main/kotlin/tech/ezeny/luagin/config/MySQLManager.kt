@@ -14,6 +14,7 @@ import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
 class MySQLManager(private val plugin: Luagin, private val yamlManager: YamlManager) {
+    // Hikari 数据源
     private var dataSource: HikariDataSource? = null
 
     // 缓存管理器，用于缓存查询结果

@@ -4,6 +4,7 @@ import org.bukkit.Bukkit
 import party.iroiro.luajava.Lua
 import party.iroiro.luajava.luajit.LuaJitConsts.LUA_REGISTRYINDEX
 import tech.ezeny.luagin.Luagin
+import tech.ezeny.luagin.lua.LuaValueFactory
 import tech.ezeny.luagin.utils.PLog
 
 object UtilsAPI : LuaAPIProvider {
@@ -51,19 +52,7 @@ object UtilsAPI : LuaAPIProvider {
                     if (luaState.isFunction(-1)) {
                         // 推送额外参数
                         extraArgs.forEach { arg ->
-                            when (arg) {
-                                null -> lua.pushNil()
-                                is String -> lua.push(arg)
-                                is Boolean -> lua.push(arg)
-                                is Int -> lua.push(arg.toLong())
-                                is Long -> lua.push(arg)
-                                is Float -> lua.push(arg.toDouble())
-                                is Double -> lua.push(arg)
-                                is Number -> lua.push(arg)
-                                is Collection<*> -> lua.push(arg)
-                                is Map<*, *> -> lua.push(arg)
-                                else -> lua.pushJavaObject(arg)
-                            }
+                            LuaValueFactory.pushJavaObject(lua, arg)
                         }
                         luaState.pCall(extraArgs.size, 0)
                     }
@@ -83,8 +72,6 @@ object UtilsAPI : LuaAPIProvider {
         if (!apiNames.contains("utils")) {
             apiNames.add("utils")
         }
-
-        PLog.info("log.info.utils_api_set")
     }
 
     override fun getAPINames(): List<String> = apiNames

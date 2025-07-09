@@ -65,7 +65,6 @@ object CommandAPI : LuaAPIProvider, KoinComponent {
         if (!apiNames.contains("cmd")) {
             apiNames.add("cmd")
         }
-        tech.ezeny.luagin.utils.PLog.info("log.info.command_api_set")
     }
 
     override fun getAPINames(): List<String> = apiNames

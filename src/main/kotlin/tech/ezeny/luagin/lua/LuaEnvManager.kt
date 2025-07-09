@@ -4,40 +4,11 @@ import party.iroiro.luajava.Lua
 import party.iroiro.luajava.luajit.LuaJit
 import tech.ezeny.luagin.Luagin
 import tech.ezeny.luagin.utils.PLog
-import java.io.File
 
 class LuaEnvManager(plugin: Luagin, val apiRegister: APIRegister) {
 
-    lateinit var lua: Lua
-        private set
-    var scriptsFolder: File = File(plugin.dataFolder, "scripts")
-
     init {
-        ensureScriptsFolderExists()
-
-        setEnvironment()
-    }
-
-    fun setEnvironment() {
-        lua = LuaJit()
-        lua.openLibraries()
-
-        setupBasicEnvironment()
-        PLog.info("log.info.set_environment")
-    }
-
-    /**
-     * 设置基础 Lua 环境
-     * 注册所有 API
-     */
-    private fun setupBasicEnvironment() {
-        apiRegister.registerAllAPIs(lua)
-    }
-
-    private fun ensureScriptsFolderExists() {
-        if (!scriptsFolder.exists()) {
-            scriptsFolder.mkdirs()
-        }
+        PLog.info("log.info.api_register_initialized")
     }
 
     /**
@@ -46,9 +17,24 @@ class LuaEnvManager(plugin: Luagin, val apiRegister: APIRegister) {
     fun getSharedAPIs(): List<String> = apiRegister.apiNames
 
     /**
-     * 关闭 Lua 环境
+     * 创建一个新的 Lua 环境
+     *
+     * @return Lua 脚本环境
      */
-    fun close() {
-        lua.close()
+    fun createScriptEnvironment(): Lua {
+        val lua = LuaJit()
+        lua.openLibraries()
+        copySharedAPIs(lua)
+        return lua
+    }
+
+    /**
+     * 将共享的 API 注册到新的脚本环境
+     *
+     * @param scriptLua 新创建的脚本环境
+     */
+    private fun copySharedAPIs(scriptLua: Lua) {
+        // 直接为脚本环境注册所有 API
+        apiRegister.registerAllAPIs(scriptLua)
     }
 }

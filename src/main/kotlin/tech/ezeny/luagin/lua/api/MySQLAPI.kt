@@ -267,8 +267,6 @@ object MySQLAPI : LuaAPIProvider, KoinComponent {
         if (!apiNames.contains("mysql")) {
             apiNames.add("mysql")
         }
-
-        PLog.info("log.info.mysql_api_set")
     }
 
     override fun getAPINames(): List<String> = apiNames

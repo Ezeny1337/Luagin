@@ -2,6 +2,7 @@ package tech.ezeny.luagin.utils
 
 import party.iroiro.luajava.Lua
 import party.iroiro.luajava.luajit.LuaJitConsts.LUA_REGISTRYINDEX
+import tech.ezeny.luagin.lua.LuaValueFactory
 import java.util.concurrent.ConcurrentHashMap
 
 object CommunicationUtils {
@@ -31,6 +32,7 @@ object CommunicationUtils {
         // 存储函数引用和 Lua 实例
         scriptFunctions[functionName] = functionRef
         luaInstances[scriptName] = lua
+        
         return true
     }
 
@@ -93,23 +95,16 @@ object CommunicationUtils {
         // 调用函数并返回结果
         return try {
             lua.rawGetI(LUA_REGISTRYINDEX, functionRef)
+            
             args.forEach { arg ->
-                when (arg) {
-                    null -> lua.pushNil()
-                    is String -> lua.push(arg)
-                    is Boolean -> lua.push(arg)
-                    is Int -> lua.push(arg.toLong())
-                    is Long -> lua.push(arg)
-                    is Float -> lua.push(arg.toDouble())
-                    is Double -> lua.push(arg)
-                    is Number -> lua.push(arg)
-                    is Collection<*> -> lua.push(arg)
-                    is Map<*, *> -> lua.push(arg)
-                    else -> lua.pushJavaObject(arg)
-                }
+                LuaValueFactory.pushJavaObject(lua, arg)
             }
+            
             lua.pCall(args.size, 1)
-            val result = lua.toJavaObject(-1)
+            
+            // 获取返回值
+            val result = LuaValueFactory.getLuaValue(lua, -1)
+            
             lua.pop(1)
             result
         } catch (e: Exception) {
@@ -134,6 +129,23 @@ object CommunicationUtils {
             result[scriptName] = functions.keys.toList()
         }
         return result
+    }
+
+    /**
+     * 调试方法：打印所有暴露的函数信息
+     */
+    fun debugPrintExposedFunctions() {
+        PLog.info("=== Exposed Functions Debug Info ===")
+        PLog.info("Total scripts registered: ${exposedFunctions.size}")
+        PLog.info("Script names: ${exposedFunctions.keys.toList()}")
+        
+        exposedFunctions.forEach { (scriptName, functions) ->
+            PLog.info("Script '$scriptName':")
+            PLog.info("  - Functions: ${functions.keys.toList()}")
+            PLog.info("  - Function refs: ${functions.values.toList()}")
+            PLog.info("  - Has Lua instance: ${luaInstances.containsKey(scriptName)}")
+        }
+        PLog.info("=== End Debug Info ===")
     }
 
     /**

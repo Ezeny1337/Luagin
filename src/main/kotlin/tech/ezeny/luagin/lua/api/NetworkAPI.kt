@@ -117,8 +117,6 @@ object NetworkAPI : LuaAPIProvider {
         if (!apiNames.contains("network")) {
             apiNames.add("network")
         }
-
-        PLog.info("log.info.network_api_set")
     }
 
     override fun getAPINames(): List<String> = apiNames
