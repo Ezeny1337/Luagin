@@ -77,6 +77,9 @@ object LanguageUtils {
             enConfig.set("log.warning.method_call_failed", "Failed to call method {0}: {1}")
             enConfig.set("log.warning.no_matching_method", "No matching method: {0}")
             enConfig.set("log.warning.method_not_found", "Method not found: {0}")
+            enConfig.set("log.warning.invalid_timezone", "Invalid timezone: {0}")
+            enConfig.set("log.warning.get_overworld_time_failed", "Failed to get Overworld time: {0}")
+            enConfig.set("log.warning.get_tps_failed", "Failed to get TPS: {0}")
 
             // 严重级别消息
             enConfig.set("log.severe.copy_shared_api_failed", "Shared API: {0} is nil in the main environment")
@@ -168,6 +171,9 @@ object LanguageUtils {
             zhConfig.set("log.warning.method_call_failed", "方法 {0} 调用失败: {1}")
             zhConfig.set("log.warning.no_matching_method", "找不到匹配的方法 {0}")
             zhConfig.set("log.warning.method_not_found", "找不到方法 {0}")
+            zhConfig.set("log.warning.invalid_timezone", "无效的时区: {0}")
+            zhConfig.set("log.warning.get_overworld_time_failed", "获取主世界时间失败: {0}")
+            zhConfig.set("log.warning.get_tps_failed", "获取 TPS 失败: {0}")
 
             // 严重级别消息
             zhConfig.set("log.severe.copy_shared_api_failed", "共享 API: {0} 在主环境为 nil")

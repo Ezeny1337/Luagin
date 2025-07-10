@@ -3,7 +3,6 @@ package tech.ezeny.luagin.lua.api
 import party.iroiro.luajava.Lua
 import tech.ezeny.luagin.Luagin
 import tech.ezeny.luagin.utils.FileUtils
-import tech.ezeny.luagin.utils.PLog
 
 object FilesAPI : LuaAPIProvider {
     private lateinit var plugin: Luagin
@@ -118,6 +117,20 @@ object FilesAPI : LuaAPIProvider {
             return@push 1
         }
         lua.setField(-2, "list_dir")
+
+        // 删除文件或目录
+        lua.push { luaState ->
+            if (luaState.top < 1) {
+                luaState.push(false)
+                return@push 1
+            }
+
+            val relativePath = luaState.toString(1) ?: ""
+            val success = FileUtils.delete(relativePath)
+            luaState.push(success)
+            return@push 1
+        }
+        lua.setField(-2, "delete")
 
         lua.setGlobal("files")
 

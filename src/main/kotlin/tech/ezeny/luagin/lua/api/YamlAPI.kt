@@ -5,7 +5,6 @@ import org.koin.core.component.inject
 import party.iroiro.luajava.Lua
 import tech.ezeny.luagin.config.YamlManager
 import tech.ezeny.luagin.lua.LuaValueFactory
-import tech.ezeny.luagin.utils.PLog
 
 object YamlAPI : LuaAPIProvider, KoinComponent {
     private val yamlManager: YamlManager by inject()

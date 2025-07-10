@@ -6,10 +6,10 @@ import org.koin.core.context.stopKoin
 import org.koin.dsl.module
 import org.koin.java.KoinJavaComponent.getKoin
 import tech.ezeny.luagin.commands.LuaginCommandExecutor
+import tech.ezeny.luagin.config.MySQLManager
 import tech.ezeny.luagin.di.getKoinModules
 import tech.ezeny.luagin.di.pluginModules
 import tech.ezeny.luagin.permissions.PermissionManager
-import tech.ezeny.luagin.utils.FileUtils
 import tech.ezeny.luagin.utils.PLog
 
 class Luagin : JavaPlugin() {
@@ -36,6 +36,10 @@ class Luagin : JavaPlugin() {
     override fun onDisable() {
         val permissionManager = getKoin().get<PermissionManager>()
         permissionManager.cleanup()
+
+        val mysqlManager = getKoin().get<MySQLManager>()
+        mysqlManager.close()
+
         stopKoin()
 
         PLog.info("log.info.unloading_completed")

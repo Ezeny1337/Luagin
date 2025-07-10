@@ -29,10 +29,11 @@ object CommandAPI : LuaAPIProvider, KoinComponent {
             }
             val commandName = luaState.toString(1) ?: return@push 0
             val permission = luaState.toString(2) ?: ""
-            // handler ref
+
             luaState.pushValue(3)
             val handlerRef = luaState.ref(LUA_REGISTRYINDEX)
             val command = commandManager.registerCommand(commandName, permission, lua, handlerRef)
+
             // 返回 LuaCommandWrapper
             LuaCommandWrapper.pushToLua(luaState, command)
             return@push 1
@@ -62,6 +63,7 @@ object CommandAPI : LuaAPIProvider, KoinComponent {
         lua.setField(-2, "exec")
 
         lua.setGlobal("cmd")
+
         if (!apiNames.contains("cmd")) {
             apiNames.add("cmd")
         }

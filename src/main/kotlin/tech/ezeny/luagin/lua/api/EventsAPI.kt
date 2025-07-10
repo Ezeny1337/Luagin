@@ -6,7 +6,6 @@ import party.iroiro.luajava.Lua
 import party.iroiro.luajava.luajit.LuaJitConsts.LUA_REGISTRYINDEX
 import tech.ezeny.luagin.events.EventManager
 import tech.ezeny.luagin.events.LuaJITEventHandler
-import tech.ezeny.luagin.utils.PLog
 
 object EventsAPI : LuaAPIProvider, KoinComponent {
     private val eventManager: EventManager by inject()
@@ -26,7 +25,6 @@ object EventsAPI : LuaAPIProvider, KoinComponent {
             // 注册事件处理器的方法
             lua.push { luaState ->
                 if (luaState.top < 2) {
-                    luaState.error("Usage: events.${categoryName}.set(eventName, handler)")
                     return@push 0
                 }
 
@@ -34,7 +32,6 @@ object EventsAPI : LuaAPIProvider, KoinComponent {
                 val handlerIndex = 3
 
                 if (!luaState.isFunction(handlerIndex)) {
-                    luaState.error("Second argument must be a function")
                     return@push 0
                 }
 

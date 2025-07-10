@@ -20,27 +20,35 @@
 
 ## 📖 Overview
 
-**Luagin** is a plugin based on the **bukkit API**. It allows developers to highly customize the server through Lua scripts in an extremely effective and efficient manner.
+**Luagin** is a plugin based on the **bukkit API** and **LuaJIT**. It allows developers to highly customize
+the server through Lua scripts in an extremely effective and efficient manner.
 
-### 🚀 Advantages
+### 🚀 Features
 
-| Features                             | Advantages                                                                                                  |
-|--------------------------------------|-------------------------------------------------------------------------------------------------------------|
-| Kotlin Implementation                | More concise, modern and secure syntax features.                                                            |
-| LuaJIT Implementation                | Extremely high running speed, complete support for Lua features, and support for bit and FFI libraries.     |
-| Friendly API design                  | High encapsulation, fluent chainable calls, excellent readability. More convenient Java object interaction. |
-| Friendly API docs                    | Easy to read, professional API docs.                                                                        |
-| Inter-script communication           | Be competent for large and complex plugin development, even more modular.                                   |
-| Koin DI framework and modular design | High cohesion and low coupling. High readability and maintainability.                                       |
-| Translation                          | Language configs in different countries or regions that can be contributed by the community.                |
+| Features                             | Advantages                                                                                                                |
+|--------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| Kotlin Implementation                | More concise, modern and secure syntax features.                                                                          |
+| LuaJIT Implementation                | Extremely high running speed, complete support for Lua features.                                                          |
+| Friendly API design                  | Highly abstract and encapsulated, fluent chainable calls, excellent readability. More convenient Java object interaction. |
+| Friendly API docs                    | Easy to read, professional API docs.                                                                                      |
+| Inter-script communication           | Be competent for large and complex plugin development, even more modular.                                                 |
+| Koin DI framework and modular design | High cohesion and low coupling. High readability and maintainability.                                                     |
+| Translation                          | Language configs in different countries or regions that can be contributed by the community.                              |
 
-### ❓ Why Lua
+### ❓ Why Lua/Luagin
 
-1. **Easy to learn**: Lua is a **lightweight, simple yet powerful** scripting language. Even beginners can quickly get started with it.
-2. **Efficient**: With Luagin, you **don't need** to build and manage **complex projects**, write **extensive boilerplate code**, or navigate through **hard-to-read APIs**, like you would when developing Java plugins.
-3. **Hot update**: **Reloading** scripts takes effect immediately, greatly improving the development experience and reducing the cost of trial and error.
-4. **Security**: Lua scripts run in a **controlled environment**, making it highly unlikely for them to crash the server or cause other serious issues.
-5. **FFI Library**: Through LuaJIT's FFI library, you can directly interact with C, and **perform underlying system operations**.
+1. **Easy to learn**: Lua is a **lightweight, simple yet powerful** scripting language. Even beginners can quickly get
+   started with it.
+2. **Efficient**: With Luagin, you **don't need** to build and manage **complex projects**, write **extensive
+   boilerplate code**, or navigate through **hard-to-read APIs**, like you would when developing Java plugins.
+3. **Hot update**: **Reloading** scripts takes effect immediately, greatly improving the development experience and
+   reducing the cost of trial and error.
+4. **Security**: Lua scripts run in a **controlled environment**, making it highly unlikely for them to crash the server
+   or cause other serious issues.
+5. **Abstraction and Encapsulation**: By **highly abstracting and encapsulating** on the Java side, calling APIs on the
+   Lua side can greatly **reduce development difficulty and time**.
+6. **Extension**: **Highly abstract and encapsulated** does not mean that developers can only implement functions
+   according to Luagin's wishes. On the contrary, it can call **all original server APIs** and **has more extensions**.
 
 ## 📚 Documents
 
@@ -53,15 +61,18 @@ https://ezeny.gitbook.io/luagin-docs
 ## 🧪 Compatibility
 
 - The supported game versions depend on the **server-side API**.
-- The support for `Bukkit` and its branches depends on the compatibility between the `Spigot` API and them. (**currently almost compatible**)
+- The support for `Bukkit` and its branches depends on the compatibility between the `Spigot` API and them. (**currently
+  almost compatible**)
 
 ## 🛠️ Support
 
-If you want to report bugs or suggest new features, you can [open an issue on Github](https://github.com/Ezeny1337/Luagin/issues).
+If you want to report bugs or suggest new features, you
+can [open an issue on Github](https://github.com/Ezeny1337/Luagin/issues).
 
 If you need help using Luagin, please contact me on Discord: **ez3nyck**
 
 ## ⚖️ License
+
     Copyright [2025] [Ezeny1337]
 
     Licensed under the Apache License, Version 2.0 (the "License");

@@ -5,7 +5,6 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import party.iroiro.luajava.Lua
 import tech.ezeny.luagin.permissions.PermissionManager
-import tech.ezeny.luagin.utils.PLog
 
 object PermissionAPI : LuaAPIProvider, KoinComponent {
     private val permissionManager: PermissionManager by inject()

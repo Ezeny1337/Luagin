@@ -4,7 +4,6 @@ import org.koin.core.component.KoinComponent
 import party.iroiro.luajava.Lua
 import tech.ezeny.luagin.lua.LuaValueFactory
 import tech.ezeny.luagin.utils.CommunicationUtils
-import tech.ezeny.luagin.utils.PLog
 
 object CommunicationAPI : LuaAPIProvider, KoinComponent {
     private val apiNames = mutableListOf<String>()
@@ -16,7 +15,6 @@ object CommunicationAPI : LuaAPIProvider, KoinComponent {
         // 暴露函数
         lua.push { luaState ->
             if (luaState.top < 2) {
-                luaState.error("Usage: comm.expose_func(functionName, function)")
                 return@push 0
             }
 
@@ -24,7 +22,6 @@ object CommunicationAPI : LuaAPIProvider, KoinComponent {
             val handlerIndex = 2
 
             if (!luaState.isFunction(handlerIndex)) {
-                luaState.error("Second argument must be a function")
                 return@push 0
             }
 
@@ -41,7 +38,6 @@ object CommunicationAPI : LuaAPIProvider, KoinComponent {
         // 取消暴露函数
         lua.push { luaState ->
             if (luaState.top < 1) {
-                luaState.error("Usage: comm.unexpose_func(functionName)")
                 return@push 0
             }
 
@@ -55,7 +51,6 @@ object CommunicationAPI : LuaAPIProvider, KoinComponent {
         // 调用其他脚本函数
         lua.push { luaState ->
             if (luaState.top < 2) {
-                luaState.error("Usage: comm.call_func(scriptName, functionName[, ...])")
                 return@push 0
             }
 
@@ -94,14 +89,6 @@ object CommunicationAPI : LuaAPIProvider, KoinComponent {
             return@push 1
         }
         lua.setField(-2, "get_exposed_functions")
-
-        // 调试函数：打印所有暴露的函数信息
-        lua.push { luaState ->
-            CommunicationUtils.debugPrintExposedFunctions()
-            luaState.push(true)
-            return@push 1
-        }
-        lua.setField(-2, "debug_functions")
 
         lua.setGlobal("comm")
 

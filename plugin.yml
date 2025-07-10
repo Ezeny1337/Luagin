@@ -10,7 +10,7 @@ commands:
     description: Luagin 插件命令
     usage: /luagin <reload|help> [脚本名]
     permission: luagin.admin
-    aliases: [lk]
+    aliases: [lg]
 permissions:
   luagin.admin:
     description: 允许使用 Luagin 管理命令

@@ -12,11 +12,6 @@ class LuaEnvManager(plugin: Luagin, val apiRegister: APIRegister) {
     }
 
     /**
-     * 获取已注册的 API 列表
-     */
-    fun getSharedAPIs(): List<String> = apiRegister.apiNames
-
-    /**
      * 创建一个新的 Lua 环境
      *
      * @return Lua 脚本环境
@@ -24,6 +19,12 @@ class LuaEnvManager(plugin: Luagin, val apiRegister: APIRegister) {
     fun createScriptEnvironment(): Lua {
         val lua = LuaJit()
         lua.openLibraries()
+
+        // 禁用库
+        lua.pushNil(); lua.setGlobal("ffi")
+        lua.pushNil(); lua.setGlobal("io")
+        lua.pushNil(); lua.setGlobal("os")
+
         copySharedAPIs(lua)
         return lua
     }

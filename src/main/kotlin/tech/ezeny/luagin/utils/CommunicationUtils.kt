@@ -132,23 +132,6 @@ object CommunicationUtils {
     }
 
     /**
-     * 调试方法：打印所有暴露的函数信息
-     */
-    fun debugPrintExposedFunctions() {
-        PLog.info("=== Exposed Functions Debug Info ===")
-        PLog.info("Total scripts registered: ${exposedFunctions.size}")
-        PLog.info("Script names: ${exposedFunctions.keys.toList()}")
-        
-        exposedFunctions.forEach { (scriptName, functions) ->
-            PLog.info("Script '$scriptName':")
-            PLog.info("  - Functions: ${functions.keys.toList()}")
-            PLog.info("  - Function refs: ${functions.values.toList()}")
-            PLog.info("  - Has Lua instance: ${luaInstances.containsKey(scriptName)}")
-        }
-        PLog.info("=== End Debug Info ===")
-    }
-
-    /**
      * 清除指定脚本的所有暴露函数
      *
      * @param scriptName 脚本名

@@ -13,7 +13,7 @@ class CommandManager(private val plugin: Luagin, private val permissionManager: 
     // 存储所有注册的命令
     private val registeredCommands = ConcurrentHashMap<String, LuaCommand>()
 
-    // 存储命令的参数提示，结构为：命令名 - 位置 - 前置参数 - 参数信息(包含列表和权限)
+    // 存储命令的参数提示，结构为：命令名 - 位置 - 前置参数 - 参数信息（包含列表和权限）
     private val commandTabCompletions =
         ConcurrentHashMap<String, ConcurrentHashMap<Int, ConcurrentHashMap<String, ArgInfo>>>()
 

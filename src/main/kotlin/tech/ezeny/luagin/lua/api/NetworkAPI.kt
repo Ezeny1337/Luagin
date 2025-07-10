@@ -4,7 +4,6 @@ import party.iroiro.luajava.Lua
 import party.iroiro.luajava.luajit.LuaJitConsts.LUA_REGISTRYINDEX
 import tech.ezeny.luagin.Luagin
 import tech.ezeny.luagin.network.NetworkManager
-import tech.ezeny.luagin.utils.PLog
 
 object NetworkAPI : LuaAPIProvider {
     private lateinit var plugin: Luagin
