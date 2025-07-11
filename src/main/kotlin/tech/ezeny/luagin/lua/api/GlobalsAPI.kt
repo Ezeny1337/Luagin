@@ -32,7 +32,7 @@ object GlobalsAPI : LuaAPIProvider {
 
         // get_realtime 函数
         lua.push { luaState ->
-            val zoneStr = if (luaState.top >= 2) luaState.toString(2) else "UTC"
+            val zoneStr = if (luaState.top >= 1) luaState.toString(1) else "UTC"
 
             try {
                 val zoneId = ZoneId.of(zoneStr)
@@ -57,7 +57,7 @@ object GlobalsAPI : LuaAPIProvider {
 
         // get_datetime 函数
         lua.push { luaState ->
-            val zoneStr = if (luaState.top >= 2) luaState.toString(2) else "UTC"
+            val zoneStr = if (luaState.top >= 1) luaState.toString(1) else "UTC"
 
             try {
                 val zoneId = ZoneId.of(zoneStr)
@@ -85,14 +85,14 @@ object GlobalsAPI : LuaAPIProvider {
             try {
                 val tps = GlobalUtils.getServerTPS()
 
-                // 创建返回的 Map，包含1分钟、5分钟、15分钟的TPS
-                val result = mapOf(
-                    "tps_1m" to tps[0],
-                    "tps_5m" to tps[1],
-                    "tps_15m" to tps[2]
-                )
-                
-                LuaValueFactory.pushJavaObject(luaState, result)
+                luaState.newTable()
+                luaState.push(tps[0])
+                luaState.rawSetI(-2, 1)
+                luaState.push(tps[1])
+                luaState.rawSetI(-2, 2)
+                luaState.push(tps[2])
+                luaState.rawSetI(-2, 3)
+
                 return@push 1
             } catch (e: Exception) {
                 PLog.warning("log.warning.get_tps_failed", e.message ?: "Unknown error")

@@ -22,11 +22,66 @@ object ConsoleAPI : LuaAPIProvider {
                     luaState.isNil(i) -> {
                         "nil"
                     }
+
                     luaState.isBoolean(i) -> {
                         if (luaState.toBoolean(i)) "true" else "false"
                     }
-                    else -> {
+
+                    luaState.isNumber(i) -> {
+                        val number = luaState.toNumber(i)
+                        if (number % 1.0 == 0.0) {
+                            number.toLong().toString()
+                        } else {
+                            number.toString()
+                        }
+                    }
+
+                    luaState.isString(i) -> {
                         luaState.toString(i) ?: "nil"
+                    }
+                    // 使用Lua的tostring函数获取标准格式
+                    luaState.isTable(i) -> {
+                        luaState.pushValue(i)
+                        luaState.getGlobal("tostring")
+                        luaState.pushValue(-2)
+                        luaState.pCall(1, 1)
+                        val result = luaState.toString(-1)
+                        luaState.pop(2)
+                        result ?: "nil"
+                    }
+
+                    luaState.isFunction(i) -> {
+                        luaState.pushValue(i)
+                        luaState.getGlobal("tostring")
+                        luaState.pushValue(-2)
+                        luaState.pCall(1, 1)
+                        val result = luaState.toString(-1)
+                        luaState.pop(2)
+                        result ?: "nil"
+                    }
+
+                    luaState.isUserdata(i) -> {
+                        luaState.pushValue(i)
+                        luaState.getGlobal("tostring")
+                        luaState.pushValue(-2)
+                        luaState.pCall(1, 1)
+                        val result = luaState.toString(-1)
+                        luaState.pop(2)
+                        result ?: "nil"
+                    }
+
+                    luaState.isThread(i) -> {
+                        luaState.pushValue(i)
+                        luaState.getGlobal("tostring")
+                        luaState.pushValue(-2)
+                        luaState.pCall(1, 1)
+                        val result = luaState.toString(-1)
+                        luaState.pop(2)
+                        result ?: "nil"
+                    }
+
+                    else -> {
+                        luaState.toString(i) ?: "unknown"
                     }
                 }
                 messages.add(message)
