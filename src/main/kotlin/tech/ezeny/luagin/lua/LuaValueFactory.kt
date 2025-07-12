@@ -32,7 +32,9 @@ object LuaValueFactory {
             is Map<*, *> -> lua.push(obj)
             is Enum<*> -> lua.push(obj.name)
             is Event, is CommandSender -> {
-                createCustomUserdata(lua, obj)}
+                createCustomUserdata(lua, obj)
+            }
+
             else -> {
                 val clazz = obj.javaClass
                 if (clazz.isPrimitive || clazz.isEnum || isPrimitiveWrapper(clazz) || isSimpleType(clazz)) {

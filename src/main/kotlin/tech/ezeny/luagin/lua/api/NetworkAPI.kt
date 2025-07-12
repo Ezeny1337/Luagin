@@ -19,7 +19,7 @@ object NetworkAPI : LuaAPIProvider {
         // 创建 network 表
         lua.newTable()
 
-        // 注册 GET 请求方法
+        // get 函数 - 建立 GET 请求
         lua.push { luaState ->
             if (luaState.top < 1) {
                 luaState.pushNil()
@@ -63,7 +63,7 @@ object NetworkAPI : LuaAPIProvider {
         }
         lua.setField(-2, "get")
 
-        // 注册 POST 请求方法
+        // post 函数 - 建立 POST 请求
         lua.push { luaState ->
             if (luaState.top < 1) {
                 luaState.pushNil()
@@ -112,7 +112,6 @@ object NetworkAPI : LuaAPIProvider {
 
         lua.setGlobal("network")
 
-        // 添加到 API 名称列表
         if (!apiNames.contains("network")) {
             apiNames.add("network")
         }

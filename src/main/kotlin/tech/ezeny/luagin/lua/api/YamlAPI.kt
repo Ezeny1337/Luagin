@@ -14,7 +14,7 @@ object YamlAPI : LuaAPIProvider, KoinComponent {
         // 创建 yaml 表
         lua.newTable()
 
-        // 获取配置值
+        // get 函数 - 获取配置值
         lua.push { luaState ->
             if (luaState.top < 2) {
                 luaState.pushNil()
@@ -39,6 +39,7 @@ object YamlAPI : LuaAPIProvider, KoinComponent {
             when {
                 config.isString(key) -> luaState.push(config.getString(key) ?: "")
                 config.isInt(key) -> luaState.push(config.getInt(key).toLong())
+                config.isLong(key) -> luaState.push(config.getLong(key))
                 config.isDouble(key) -> luaState.push(config.getDouble(key))
                 config.isBoolean(key) -> luaState.push(config.getBoolean(key))
                 config.isList(key) -> {
@@ -53,13 +54,26 @@ object YamlAPI : LuaAPIProvider, KoinComponent {
                         luaState.pushNil()
                     }
                 }
+                config.isConfigurationSection(key) -> {
+                    val section = config.getConfigurationSection(key)
+                    if (section != null) {
+                        luaState.newTable()
+                        section.getKeys(false).forEach { sectionKey ->
+                            val value = section.get(sectionKey)
+                            LuaValueFactory.pushJavaObject(luaState, value)
+                            luaState.setField(-2, sectionKey)
+                        }
+                    } else {
+                        luaState.pushNil()
+                    }
+                }
                 else -> luaState.pushNil()
             }
             return@push 1
         }
         lua.setField(-2, "get")
         
-        // 设置配置值
+        // set 函数 - 设置配置值
         lua.push { luaState ->
             if (luaState.top < 3) {
                 luaState.push(false)
@@ -109,8 +123,7 @@ object YamlAPI : LuaAPIProvider, KoinComponent {
         lua.setField(-2, "set")
 
         lua.setGlobal("yaml")
-        
-        // 添加到 API 名称列表
+
         if (!apiNames.contains("yaml")) {
             apiNames.add("yaml")
         }

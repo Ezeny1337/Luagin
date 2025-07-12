@@ -20,17 +20,17 @@ object GlobalsAPI : LuaAPIProvider {
         // 创建 globals 表
         lua.newTable()
 
-        // owtime 属性（主世界 Overworld 的相对游戏时间）
+        // owtime 属性 - 主世界 Overworld 的相对游戏时间
         val time = GlobalUtils.getOverworldTime()
         lua.push(time.toDouble())
         lua.setField(-2, "owtime")
 
-        // timestamp 属性（当前时间戳）
+        // timestamp 属性 - 当前时间戳
         val timestamp = System.currentTimeMillis().toDouble()
         lua.push(timestamp)
         lua.setField(-2, "timestamp")
 
-        // get_realtime 函数
+        // get_realtime 函数 - 获取实时时间
         lua.push { luaState ->
             val zoneStr = if (luaState.top >= 1) luaState.toString(1) else "UTC"
 
@@ -55,7 +55,7 @@ object GlobalsAPI : LuaAPIProvider {
         }
         lua.setField(-2, "get_realtime")
 
-        // get_datetime 函数
+        // get_datetime 函数 - 获取日期时间
         lua.push { luaState ->
             val zoneStr = if (luaState.top >= 1) luaState.toString(1) else "UTC"
 
@@ -80,7 +80,7 @@ object GlobalsAPI : LuaAPIProvider {
         }
         lua.setField(-2, "get_datetime")
 
-        // get_tps 函数
+        // get_tps 函数 - 获取服务器 tps
         lua.push { luaState ->
             try {
                 val tps = GlobalUtils.getServerTPS()
@@ -104,7 +104,6 @@ object GlobalsAPI : LuaAPIProvider {
 
         lua.setGlobal("globals")
 
-        // 添加到 API 名称列表
         if (!apiNames.contains("globals")) {
             apiNames.add("globals")
         }

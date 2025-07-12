@@ -15,7 +15,7 @@ object MySQLAPI : LuaAPIProvider, KoinComponent {
         // 创建 mysql 表
         lua.newTable()
 
-        // 创建表
+        // create_table 函数 - 创建表
         lua.push { luaState ->
             if (luaState.top < 2) {
                 luaState.push(false)
@@ -53,7 +53,7 @@ object MySQLAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "create_table")
 
-        // 插入数据
+        // insert 函数 - 插入数据
         lua.push { luaState ->
             if (luaState.top < 2) {
                 luaState.push(-1)
@@ -74,13 +74,7 @@ object MySQLAPI : LuaAPIProvider, KoinComponent {
             while (luaState.next(2) != 0) {
                 val key = luaState.toString(-2)
                 if (key != null) {
-                    val value = when {
-                        luaState.isString(-1) -> luaState.toString(-1) ?: ""
-                        luaState.isInteger(-1) -> luaState.toInteger(-1)
-                        luaState.isNumber(-1) -> luaState.toNumber(-1)
-                        luaState.isBoolean(-1) -> luaState.toBoolean(-1)
-                        else -> luaState.toString(-1) ?: ""
-                    }
+                    val value = getLuaValue(luaState)
                     values[key] = value
                 }
                 luaState.pop(1)
@@ -105,7 +99,7 @@ object MySQLAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "insert")
 
-        // 更新数据
+        // update 函数 - 更新数据
         lua.push { luaState ->
             if (luaState.top < 4) {
                 luaState.push(-1)
@@ -128,33 +122,21 @@ object MySQLAPI : LuaAPIProvider, KoinComponent {
             val values = mutableMapOf<String, Any>()
             val whereArgs = mutableListOf<Any>()
 
-            // 遍历Lua表获取更新值
+            // 遍历 Lua 表获取更新值
             luaState.pushNil()
             while (luaState.next(2) != 0) {
                 val key = luaState.toString(-2)
                 if (key != null) {
-                    val value = when {
-                        luaState.isString(-1) -> luaState.toString(-1) ?: ""
-                        luaState.isInteger(-1) -> luaState.toInteger(-1)
-                        luaState.isNumber(-1) -> luaState.toNumber(-1)
-                        luaState.isBoolean(-1) -> luaState.toBoolean(-1)
-                        else -> luaState.toString(-1) ?: ""
-                    }
+                    val value = getLuaValue(luaState)
                     values[key] = value
                 }
                 luaState.pop(1)
             }
 
-            // 遍历Lua表获取where参数
+            // 遍历 Lua 表获取 where 参数
             luaState.pushNil()
             while (luaState.next(4) != 0) {
-                val value = when {
-                    luaState.isString(-1) -> luaState.toString(-1) ?: ""
-                    luaState.isInteger(-1) -> luaState.toInteger(-1)
-                    luaState.isNumber(-1) -> luaState.toNumber(-1)
-                    luaState.isBoolean(-1) -> luaState.toBoolean(-1)
-                    else -> luaState.toString(-1) ?: ""
-                }
+                val value = getLuaValue(luaState)
                 whereArgs.add(value)
                 luaState.pop(1)
             }
@@ -178,7 +160,7 @@ object MySQLAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "update")
 
-        // 查询数据
+        // query 函数 - 查询数据
         lua.push { luaState ->
             if (luaState.top < 1) {
                 luaState.pushNil()
@@ -211,13 +193,7 @@ object MySQLAPI : LuaAPIProvider, KoinComponent {
                 val list = mutableListOf<Any>()
                 luaState.pushNil()
                 while (luaState.next(4) != 0) {
-                    val value = when {
-                        luaState.isString(-1) -> luaState.toString(-1) ?: ""
-                        luaState.isInteger(-1) -> luaState.toInteger(-1)
-                        luaState.isNumber(-1) -> luaState.toNumber(-1)
-                        luaState.isBoolean(-1) -> luaState.toBoolean(-1)
-                        else -> luaState.toString(-1) ?: ""
-                    }
+                    val value = getLuaValue(luaState)
                     list.add(value)
                     luaState.pop(1)
                 }
@@ -266,6 +242,16 @@ object MySQLAPI : LuaAPIProvider, KoinComponent {
         // 添加到 API 名称列表
         if (!apiNames.contains("mysql")) {
             apiNames.add("mysql")
+        }
+    }
+
+    private fun getLuaValue(luaState: Lua): Any {
+        return when {
+            luaState.isString(-1) -> luaState.toString(-1) ?: ""
+            luaState.isInteger(-1) -> luaState.toInteger(-1)
+            luaState.isNumber(-1) -> luaState.toNumber(-1)
+            luaState.isBoolean(-1) -> luaState.toBoolean(-1)
+            else -> luaState.toString(-1) ?: ""
         }
     }
 

@@ -15,6 +15,7 @@ object TitleAPI : LuaAPIProvider {
     }
 
     override fun registerAPI(lua: Lua) {
+        // print_title 函数 - 输出内容到标题位置
         lua.push { luaState ->
             if (luaState.top < 2) {
                 return@push 0
@@ -35,7 +36,6 @@ object TitleAPI : LuaAPIProvider {
 
             runOnMainThread {
                 if (playerName != null) {
-                    // 发送给指定玩家
                     val player = Bukkit.getPlayerExact(playerName)
                     if (player != null) {
                         MessageUtils.sendTitle(player, title, subtitle, fadeIn, stay, fadeOut)
@@ -43,7 +43,6 @@ object TitleAPI : LuaAPIProvider {
                         PLog.warning("log.warning.player_not_found", playerName)
                     }
                 } else {
-                    // 发送给所有在线玩家
                     Bukkit.getOnlinePlayers().forEach { player ->
                         MessageUtils.sendTitle(player, title, subtitle, fadeIn, stay, fadeOut)
                     }
@@ -54,7 +53,6 @@ object TitleAPI : LuaAPIProvider {
         }
         lua.setGlobal("print_title")
 
-        // 添加到 API 名称列表
         if (!apiNames.contains("print_title")) {
             apiNames.add("print_title")
         }

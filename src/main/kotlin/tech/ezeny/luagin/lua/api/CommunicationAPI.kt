@@ -12,7 +12,7 @@ object CommunicationAPI : LuaAPIProvider, KoinComponent {
         // 创建 comm 表
         lua.newTable()
 
-        // 暴露函数
+        // expose_func 函数 - 暴露函数
         lua.push { luaState ->
             if (luaState.top < 2) {
                 return@push 0
@@ -35,7 +35,7 @@ object CommunicationAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "expose_func")
 
-        // 取消暴露函数
+        // unexpose_func 函数 - 取消暴露函数
         lua.push { luaState ->
             if (luaState.top < 1) {
                 return@push 0
@@ -48,7 +48,7 @@ object CommunicationAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "unexpose_func")
 
-        // 调用其他脚本函数
+        // call_func 函数 - 调用暴露的函数
         lua.push { luaState ->
             if (luaState.top < 2) {
                 return@push 0
@@ -64,25 +64,12 @@ object CommunicationAPI : LuaAPIProvider, KoinComponent {
             }
 
             val result = CommunicationUtils.callFunction(scriptName, functionName, args)
-            when (result) {
-                null -> luaState.pushNil()
-                is String -> luaState.push(result)
-                is Boolean -> luaState.push(result)
-                is Int -> luaState.push(result.toLong())
-                is Long -> luaState.push(result)
-                is Float -> luaState.push(result.toDouble())
-                is Double -> luaState.push(result)
-                is Number -> luaState.push(result)
-                is Collection<*> -> luaState.push(result)
-                is Map<*, *> -> luaState.push(result)
-                else -> luaState.pushJavaObject(result)
-            }
-
+            LuaValueFactory.pushJavaObject(luaState, result)
             return@push 1
         }
         lua.setField(-2, "call_func")
 
-        // 获取所有暴露函数
+        // get_exposed_functions 函数 - 获取所有暴露函数
         lua.push { luaState ->
             val exposedFunctions = CommunicationUtils.getExposedFunctions()
             luaState.push(exposedFunctions)

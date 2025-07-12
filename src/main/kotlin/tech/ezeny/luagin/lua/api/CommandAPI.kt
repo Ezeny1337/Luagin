@@ -22,7 +22,7 @@ object CommandAPI : LuaAPIProvider, KoinComponent {
         // 创建 cmd 表
         lua.newTable()
 
-        // register 函数
+        // register 函数 - 注册命令
         lua.push { luaState ->
             if (luaState.top < 3 || !luaState.isString(1) || !luaState.isString(2) || !luaState.isFunction(3)) {
                 return@push 0
@@ -40,7 +40,7 @@ object CommandAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "register")
 
-        // exec 函数
+        // exec 函数 - 执行命令
         lua.push { luaState ->
             if (luaState.top < 1 || !luaState.isString(1)) {
                 return@push 0
@@ -79,7 +79,7 @@ object CommandAPI : LuaAPIProvider, KoinComponent {
             fun pushToLua(lua: Lua, command: LuaCommand) {
                 lua.newTable()
 
-                // add_args
+                // add_args 方法 - 给命令添加参数
                 lua.push { luaState ->
                     if (luaState.top < 3 || !luaState.isNumber(2) || !luaState.isTable(3)) {
                         return@push 1
@@ -99,7 +99,7 @@ object CommandAPI : LuaAPIProvider, KoinComponent {
                 }
                 lua.setField(-2, "add_args")
 
-                // add_args_for
+                // add_args_for 方法 - 给上一级命令添加参数
                 lua.push { luaState ->
                     if (luaState.top < 4 || !luaState.isNumber(2) || !luaState.isString(3) || !luaState.isTable(4)) {
                         return@push 1

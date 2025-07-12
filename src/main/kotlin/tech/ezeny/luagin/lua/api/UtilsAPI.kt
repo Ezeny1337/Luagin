@@ -19,7 +19,7 @@ object UtilsAPI : LuaAPIProvider {
         // 创建 utils 表
         lua.newTable()
 
-        // 注册 run_timer 函数 (重复执行)
+        // run_timer 函数 - 设置重复执行的定时器
         lua.push { luaState ->
             if (luaState.top < 3) {
                 return@push 0
@@ -68,7 +68,7 @@ object UtilsAPI : LuaAPIProvider {
         }
         lua.setField(-2, "run_timer")
 
-        // 注册 run_timer_once 函数 (单次执行)
+        // run_timer_once 函数 - 设置单次执行的定时器
         lua.push { luaState ->
             if (luaState.top < 2) {
                 return@push 0
@@ -114,7 +114,7 @@ object UtilsAPI : LuaAPIProvider {
         }
         lua.setField(-2, "run_timer_once")
 
-        // 注册 cancel_timer 函数
+        // cancel_timer 函数 - 取消计时器
         lua.push { luaState ->
             if (luaState.top < 1) {
                 return@push 0
@@ -124,9 +124,6 @@ object UtilsAPI : LuaAPIProvider {
             
             try {
                 val scheduler = Bukkit.getScheduler()
-                
-                // 添加调试信息
-                PLog.info( "尝试取消任务，ID: $taskId")
                 
                 // 尝试取消任务
                 scheduler.cancelTask(taskId)
@@ -145,7 +142,6 @@ object UtilsAPI : LuaAPIProvider {
 
         lua.setGlobal("utils")
 
-        // 添加到 API 名称列表
         if (!apiNames.contains("utils")) {
             apiNames.add("utils")
         }

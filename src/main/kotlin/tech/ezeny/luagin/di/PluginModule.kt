@@ -8,6 +8,7 @@ import tech.ezeny.luagin.config.YamlManager
 import tech.ezeny.luagin.config.MySQLManager
 import tech.ezeny.luagin.events.EventManager
 import tech.ezeny.luagin.i18n.I18n
+import tech.ezeny.luagin.items.ItemManager
 import tech.ezeny.luagin.lua.APIRegister
 import tech.ezeny.luagin.lua.LuaEnvManager
 import tech.ezeny.luagin.lua.ScriptManager
@@ -24,6 +25,7 @@ val pluginModules = module {
     single { CommandManager(get(), get()) }
     single { MySQLManager(get(), get()) }
     single { EventManager(get()) }
+    single { ItemManager() }
     single { APIRegister(get()) }
     single { LuaEnvManager(get(), get()) }
     single { ScriptManager(get(), get(), get()) }
@@ -37,6 +39,7 @@ fun getKoinModules() {
     getKoin().get<CommandManager>()
     getKoin().get<MySQLManager>()
     getKoin().get<EventManager>()
+    getKoin().get<ItemManager>()
     getKoin().get<APIRegister>()
     getKoin().get<LuaEnvManager>()
     getKoin().get<ScriptManager>()

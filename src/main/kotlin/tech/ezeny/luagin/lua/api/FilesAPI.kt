@@ -16,7 +16,7 @@ object FilesAPI : LuaAPIProvider {
         // 创建 files 表
         lua.newTable()
 
-        // 读取文件内容
+        // read 函数 - 读取文件内容
         lua.push { luaState ->
             if (luaState.top < 1) {
                 luaState.pushNil()
@@ -35,7 +35,7 @@ object FilesAPI : LuaAPIProvider {
         }
         lua.setField(-2, "read")
 
-        // 写入文件内容
+        // write 函数 - 写入文件内容
         lua.push { luaState ->
             if (luaState.top < 2) {
                 luaState.push(false)
@@ -52,7 +52,7 @@ object FilesAPI : LuaAPIProvider {
         }
         lua.setField(-2, "write")
 
-        // 创建目录
+        // create_folder 函数 - 创建文件夹
         lua.push { luaState ->
             if (luaState.top < 1) {
                 luaState.push(false)
@@ -66,7 +66,7 @@ object FilesAPI : LuaAPIProvider {
         }
         lua.setField(-2, "create_folder")
 
-        // 创建文件
+        // create_file 函数 - 创建文件
         lua.push { luaState ->
             if (luaState.top < 1) {
                 luaState.push(false)
@@ -80,7 +80,7 @@ object FilesAPI : LuaAPIProvider {
         }
         lua.setField(-2, "create_file")
 
-        // 检查文件或文件夹是否存在
+        // exists 函数 - 检查文件或文件夹是否存在
         lua.push { luaState ->
             if (luaState.top < 1) {
                 luaState.push(false)
@@ -94,7 +94,7 @@ object FilesAPI : LuaAPIProvider {
         }
         lua.setField(-2, "exists")
 
-        // 列出目录内容
+        // list_dir 函数 - 列出目录内容
         lua.push { luaState ->
             if (luaState.top < 1) {
                 luaState.pushNil()
@@ -118,7 +118,7 @@ object FilesAPI : LuaAPIProvider {
         }
         lua.setField(-2, "list_dir")
 
-        // 删除文件或目录
+        // delete 函数 - 删除文件或文件夹
         lua.push { luaState ->
             if (luaState.top < 1) {
                 luaState.push(false)
@@ -134,7 +134,6 @@ object FilesAPI : LuaAPIProvider {
 
         lua.setGlobal("files")
 
-        // 添加到 API 名称列表
         if (!apiNames.contains("files")) {
             apiNames.add("files")
         }

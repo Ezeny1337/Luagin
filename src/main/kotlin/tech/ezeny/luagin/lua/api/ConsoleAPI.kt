@@ -13,6 +13,7 @@ object ConsoleAPI : LuaAPIProvider {
     }
 
     override fun registerAPI(lua: Lua) {
+        // print 全局函数
         lua.push { luaState ->
             val messages = mutableListOf<String>()
 
@@ -39,7 +40,8 @@ object ConsoleAPI : LuaAPIProvider {
                     luaState.isString(i) -> {
                         luaState.toString(i) ?: "nil"
                     }
-                    // 使用Lua的tostring函数获取标准格式
+
+                    // 使用 Lua 的 tostring 函数获取标准格式
                     luaState.isTable(i) -> {
                         luaState.pushValue(i)
                         luaState.getGlobal("tostring")

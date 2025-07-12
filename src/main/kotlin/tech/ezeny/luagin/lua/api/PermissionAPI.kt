@@ -14,7 +14,7 @@ object PermissionAPI : LuaAPIProvider, KoinComponent {
         // 创建 perm 表
         lua.newTable()
 
-        // 检查权限
+        // player_check 函数 - 检查玩家权限
         lua.push { luaState ->
             if (luaState.top < 2) {
                 luaState.push(false)
@@ -35,7 +35,7 @@ object PermissionAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "player_check")
 
-        // 添加权限
+        // player_add 函数 - 给玩家添加权限
         lua.push { luaState ->
             if (luaState.top < 2) {
                 luaState.push(false)
@@ -56,7 +56,7 @@ object PermissionAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "player_add")
 
-        // 移除权限
+        // player_remove 函数 - 移除玩家权限
         lua.push { luaState ->
             if (luaState.top < 2) {
                 luaState.push(false)
@@ -77,7 +77,7 @@ object PermissionAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "player_remove")
 
-        // 获取玩家所有权限
+        // get_player_permissions 函数 - 获取玩家的所有权限
         lua.push { luaState ->
             if (luaState.top < 1) {
                 luaState.pushNil()
@@ -115,7 +115,7 @@ object PermissionAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "get_player_permissions")
 
-        // 添加权限组
+        // add_group 函数 - 添加权限组
         lua.push { luaState ->
             if (luaState.top < 2) {
                 luaState.push(false)
@@ -164,7 +164,7 @@ object PermissionAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "add_group")
 
-        // 获取权限组信息
+        // get_group_info 函数 - 获取权限组信息
         lua.push { luaState ->
             if (luaState.top < 1) {
                 luaState.pushNil()
@@ -209,7 +209,7 @@ object PermissionAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "get_group_info")
 
-        // 获取权限组权重
+        // get_group_weight 函数 - 获取权限组权重
         lua.push { luaState ->
             if (luaState.top < 1) {
                 luaState.push(0)
@@ -222,7 +222,7 @@ object PermissionAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "get_group_weight")
 
-        // 设置权限组权重
+        // set_group_weight 函数 - 设置权限组权重
         lua.push { luaState ->
             if (luaState.top < 2) {
                 luaState.push(false)
@@ -237,7 +237,7 @@ object PermissionAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "set_group_weight")
 
-        // 设置权限组继承关系
+        // set_group_inherit 函数 - 设置权限组继承关系
         lua.push { luaState ->
             if (luaState.top < 2) {
                 luaState.push(false)
@@ -266,7 +266,7 @@ object PermissionAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "set_group_inherit")
 
-        // 将玩家添加到权限组
+        // add_player_group 函数 - 将玩家添加到权限组
         lua.push { luaState ->
             if (luaState.top < 2) {
                 luaState.push(false)
@@ -287,7 +287,7 @@ object PermissionAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "add_player_group")
 
-        // 将玩家从权限组移除
+        // remove_player_group 函数 - 将玩家从权限组移除
         lua.push { luaState ->
             if (luaState.top < 2) {
                 luaState.push(false)
@@ -308,7 +308,7 @@ object PermissionAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "remove_player_group")
 
-        // 获取玩家所属的所有权限组
+        // get_player_groups 函数 - 获取玩家所属的所有权限组
         lua.push { luaState ->
             if (luaState.top < 1) {
                 luaState.pushNil()
@@ -348,7 +348,6 @@ object PermissionAPI : LuaAPIProvider, KoinComponent {
 
         lua.setGlobal("perm")
 
-        // 添加到 API 名称列表
         if (!apiNames.contains("perm")) {
             apiNames.add("perm")
         }
