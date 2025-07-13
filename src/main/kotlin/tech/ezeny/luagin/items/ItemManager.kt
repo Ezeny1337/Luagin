@@ -9,6 +9,7 @@ import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
 import org.bukkit.persistence.PersistentDataType
+import tech.ezeny.luagin.utils.ColorUtils
 
 class ItemManager {
 
@@ -18,7 +19,7 @@ class ItemManager {
      * @return 创建的物品堆栈
      */
     fun createItem(material: Material): ItemStack {
-        return ItemStack(material, 1)
+        return ItemStack(material)
     }
 
     /**
@@ -47,12 +48,12 @@ class ItemManager {
 
         // 设置显示名称
         if (displayName != null) {
-            meta.setDisplayName(displayName)
+            meta.setDisplayName(ColorUtils.formatString(displayName))
         }
 
         // 设置Lore
         if (lore != null) {
-            meta.lore = lore
+            meta.lore = lore.map { ColorUtils.formatString(it) }
         }
 
         // 设置附魔
@@ -100,12 +101,12 @@ class ItemManager {
 
         // 设置显示名称
         if (displayName != null) {
-            meta.setDisplayName(displayName)
+            meta.setDisplayName(ColorUtils.formatString(displayName))
         }
 
         // 设置Lore
         if (lore != null) {
-            meta.lore = lore
+            meta.lore = lore.map { ColorUtils.formatString(it) }
         }
 
         item.itemMeta = meta
@@ -196,6 +197,38 @@ class ItemManager {
     }
 
     /**
+     * 从玩家背包移除指定物品
+     */
+    fun removeSpecificItem(player: Player, targetItem: ItemStack, amount: Int): Boolean {
+        var remainingAmount = amount
+        val inventory = player.inventory
+
+        // 遍历背包中的所有物品
+        for (i in 0 until inventory.size) {
+            val item = inventory.getItem(i)
+            if (item != null && isSimilarItem(item, targetItem)) {
+                val itemAmount = item.amount
+                if (itemAmount <= remainingAmount) {
+                    // 移除整个物品堆
+                    inventory.setItem(i, null)
+                    remainingAmount -= itemAmount
+                } else {
+                    // 只移除部分数量
+                    item.amount = itemAmount - remainingAmount
+                    inventory.setItem(i, item)
+                    remainingAmount = 0
+                }
+
+                if (remainingAmount <= 0) {
+                    break
+                }
+            }
+        }
+
+        return remainingAmount <= 0
+    }
+
+    /**
      * 检查玩家是否有指定物品
      */
     fun hasItem(player: Player, material: Material, amount: Int = 1): Boolean {
@@ -210,12 +243,39 @@ class ItemManager {
     }
 
     /**
+     * 检查玩家是否有指定物品
+     */
+    fun hasSpecificItem(player: Player, targetItem: ItemStack, amount: Int = 1): Boolean {
+        var count = 0
+        for (item in player.inventory.contents) {
+            if (item != null && isSimilarItem(item, targetItem)) {
+                count += item.amount
+                if (count >= amount) return true
+            }
+        }
+        return false
+    }
+
+    /**
      * 获取玩家指定物品的数量
      */
     fun getItemCount(player: Player, material: Material): Int {
         var count = 0
         for (item in player.inventory.contents) {
             if (item?.type == material) {
+                count += item.amount
+            }
+        }
+        return count
+    }
+
+    /**
+     * 获取玩家指定物品的数量
+     */
+    fun getSpecificItemCount(player: Player, targetItem: ItemStack): Int {
+        var count = 0
+        for (item in player.inventory.contents) {
+            if (item != null && isSimilarItem(item, targetItem)) {
                 count += item.amount
             }
         }
@@ -262,6 +322,66 @@ class ItemManager {
         return player.inventory.contents.filterNotNull()
     }
 
+
+    /**
+     * 比较两个物品是否相似
+     */
+    private fun isSimilarItem(item1: ItemStack, item2: ItemStack): Boolean {
+        if (item1.type != item2.type) return false
+
+        val meta1 = item1.itemMeta
+        val meta2 = item2.itemMeta
+
+        // 比较显示名称
+        if (meta1?.hasDisplayName() == true && meta2?.hasDisplayName() == true) {
+            if (meta1.displayName != meta2.displayName) return false
+        } else if (meta1?.hasDisplayName() != meta2?.hasDisplayName()) {
+            return false
+        }
+
+        // 比较 lore
+        if (meta1?.hasLore() == true && meta2?.hasLore() == true) {
+            if (meta1.lore != meta2.lore) return false
+        } else if (meta1?.hasLore() != meta2?.hasLore()) {
+            return false
+        }
+
+        // 比较附魔
+        if (meta1?.hasEnchants() == true && meta2?.hasEnchants() == true) {
+            if (meta1.enchants != meta2.enchants) return false
+        } else if (meta1?.hasEnchants() != meta2?.hasEnchants()) {
+            return false
+        }
+
+        // 比较不可破坏属性
+        if (meta1?.isUnbreakable != meta2?.isUnbreakable) return false
+
+        // 比较自定义模型数据
+        if (meta1?.hasCustomModelData() == true && meta2?.hasCustomModelData() == true) {
+            if (meta1.customModelData != meta2.customModelData) return false
+        } else if (meta1?.hasCustomModelData() != meta2?.hasCustomModelData()) {
+            return false
+        }
+
+        // 比较持久化数据
+        val container1 = meta1?.persistentDataContainer
+        val container2 = meta2?.persistentDataContainer
+        if (container1 != null && container2 != null) {
+            val keys1 = container1.keys.toSet()
+            val keys2 = container2.keys.toSet()
+            if (keys1 != keys2) return false
+
+            for (key in keys1) {
+                val value1 = container1.get(key, PersistentDataType.STRING)
+                val value2 = container2.get(key, PersistentDataType.STRING)
+                if (value1 != value2) return false
+            }
+        } else if (container1 != null || container2 != null) {
+            return false
+        }
+
+        return true
+    }
 
     /**
      * 获取物品信息

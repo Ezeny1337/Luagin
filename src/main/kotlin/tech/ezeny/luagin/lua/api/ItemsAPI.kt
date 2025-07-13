@@ -95,73 +95,13 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "create_skull")
 
-        // give 函数 - 给玩家物品
+        // give 函数 - 给予玩家物品
         lua.push { luaState ->
             if (luaState.top < 2) {
                 return@push 0
             }
 
             val playerName = luaState.toString(1) ?: return@push 0
-
-            // 检查第二个参数是否是物品表
-            val item: ItemStack?
-            if (luaState.isTable(2)) {
-                // 从物品表中获取实际的ItemStack
-                luaState.getField(2, "__item")
-                item = luaState.toJavaObject(-1) as? ItemStack
-                luaState.pop(1)
-            } else {
-                item = luaState.toJavaObject(2) as? ItemStack
-            }
-
-            if (item == null) {
-                luaState.push(false)
-                return@push 1
-            }
-
-            val player = Bukkit.getPlayer(playerName)
-            if (player == null) {
-                luaState.push(false)
-                return@push 1
-            }
-
-            val success = itemManager.giveItem(player, item)
-            luaState.push(success)
-            return@push 1
-        }
-        lua.setField(-2, "give")
-
-        // remove 函数 - 从玩家背包移除物品
-        lua.push { luaState ->
-            if (luaState.top < 3 || !luaState.isString(1) || !luaState.isString(2) || !luaState.isNumber(3)) {
-                return@push 0
-            }
-
-            val playerName = luaState.toString(1) ?: return@push 0
-            val materialName = luaState.toString(2) ?: return@push 0
-            val amount = luaState.toInteger(3).toInt()
-
-            val player = Bukkit.getPlayer(playerName)
-            if (player == null) {
-                luaState.push(false)
-                return@push 1
-            }
-
-            val material = Material.valueOf(materialName.uppercase())
-            val success = itemManager.removeItem(player, material, amount)
-            luaState.push(success)
-            return@push 1
-        }
-        lua.setField(-2, "remove")
-
-        // has 函数 - 检查玩家是否有指定物品
-        lua.push { luaState ->
-            if (luaState.top < 2 || !luaState.isString(1) || !luaState.isString(2)) {
-                return@push 0
-            }
-
-            val playerName = luaState.toString(1) ?: return@push 0
-            val materialName = luaState.toString(2) ?: return@push 0
             val amount = if (luaState.top > 2 && luaState.isNumber(3)) luaState.toInteger(3).toInt() else 1
 
             val player = Bukkit.getPlayer(playerName)
@@ -170,21 +110,135 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
                 return@push 1
             }
 
-            val material = Material.valueOf(materialName.uppercase())
-            val hasItem = itemManager.hasItem(player, material, amount)
+            val success: Boolean
+            if (luaState.isString(2)) {
+                // 第二个参数是字符串
+                val materialName = luaState.toString(2) ?: return@push 0
+                val material = Material.valueOf(materialName.uppercase())
+                val item = itemManager.createItem(material)
+                item.amount = amount
+                success = itemManager.giveItem(player, item)
+            } else {
+                // 第二个参数是物品对象
+                val item: ItemStack?
+                if (luaState.isTable(2)) {
+                    luaState.getField(2, "__item")
+                    item = luaState.toJavaObject(-1) as? ItemStack
+                    luaState.pop(1)
+                } else {
+                    item = luaState.toJavaObject(2) as? ItemStack
+                }
+
+                if (item == null) {
+                    luaState.push(false)
+                    return@push 1
+                }
+
+                // 设置物品数量
+                item.amount = amount
+                success = itemManager.giveItem(player, item)
+            }
+
+            luaState.push(success)
+            return@push 1
+        }
+        lua.setField(-2, "give")
+
+        // remove 函数 - 移除玩家物品
+        lua.push { luaState ->
+            if (luaState.top < 2) {
+                return@push 0
+            }
+
+            val playerName = luaState.toString(1) ?: return@push 0
+            val amount = if (luaState.top > 2 && luaState.isNumber(3)) luaState.toInteger(3).toInt() else 1
+
+            val player = Bukkit.getPlayer(playerName)
+            if (player == null) {
+                luaState.push(false)
+                return@push 1
+            }
+
+            val success: Boolean
+            if (luaState.isString(2)) {
+                // 第二个参数是字符串
+                val materialName = luaState.toString(2) ?: return@push 0
+                val material = Material.valueOf(materialName.uppercase())
+                success = itemManager.removeItem(player, material, amount)
+            } else {
+                // 第二个参数是物品对象
+                val item: ItemStack?
+                if (luaState.isTable(2)) {
+                    luaState.getField(2, "__item")
+                    item = luaState.toJavaObject(-1) as? ItemStack
+                    luaState.pop(1)
+                } else {
+                    item = luaState.toJavaObject(2) as? ItemStack
+                }
+
+                if (item == null) {
+                    luaState.push(false)
+                    return@push 1
+                }
+                success = itemManager.removeSpecificItem(player, item, amount)
+            }
+
+            luaState.push(success)
+            return@push 1
+        }
+        lua.setField(-2, "remove")
+
+        // has 函数 - 检查玩家是否拥有物品
+        lua.push { luaState ->
+            if (luaState.top < 2) {
+                return@push 0
+            }
+
+            val playerName = luaState.toString(1) ?: return@push 0
+            val amount = if (luaState.top > 2 && luaState.isNumber(3)) luaState.toInteger(3).toInt() else 1
+
+            val player = Bukkit.getPlayer(playerName)
+            if (player == null) {
+                luaState.push(false)
+                return@push 1
+            }
+
+            val hasItem: Boolean
+            if (luaState.isString(2)) {
+                // 第二个参数是字符串
+                val materialName = luaState.toString(2) ?: return@push 0
+                val material = Material.valueOf(materialName.uppercase())
+                hasItem = itemManager.hasItem(player, material, amount)
+            } else {
+                // 第二个参数是物品对象
+                val item: ItemStack?
+                if (luaState.isTable(2)) {
+                    luaState.getField(2, "__item")
+                    item = luaState.toJavaObject(-1) as? ItemStack
+                    luaState.pop(1)
+                } else {
+                    item = luaState.toJavaObject(2) as? ItemStack
+                }
+
+                if (item == null) {
+                    luaState.push(false)
+                    return@push 1
+                }
+                hasItem = itemManager.hasSpecificItem(player, item, amount)
+            }
+
             luaState.push(hasItem)
             return@push 1
         }
         lua.setField(-2, "has")
 
-        // count 函数 - 获取玩家指定物品的数量
+        // count 函数 - 获取玩家拥有的物品数量
         lua.push { luaState ->
-            if (luaState.top < 2 || !luaState.isString(1) || !luaState.isString(2)) {
+            if (luaState.top < 2) {
                 return@push 0
             }
 
             val playerName = luaState.toString(1) ?: return@push 0
-            val materialName = luaState.toString(2) ?: return@push 0
 
             val player = Bukkit.getPlayer(playerName)
             if (player == null) {
@@ -192,16 +246,38 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
                 return@push 1
             }
 
-            try {
-                val material = Material.valueOf(materialName.uppercase())
-                val count = itemManager.getItemCount(player, material)
-                luaState.push(count.toLong())
-                return@push 1
-            } catch (e: IllegalArgumentException) {
-                PLog.warning("无效的物品类型: $materialName")
-                luaState.push(0)
-                return@push 1
+            val count: Int
+            if (luaState.isString(2)) {
+                // 第二个参数是字符串，按材质处理
+                val materialName = luaState.toString(2) ?: return@push 0
+                try {
+                    val material = Material.valueOf(materialName.uppercase())
+                    count = itemManager.getItemCount(player, material)
+                } catch (e: IllegalArgumentException) {
+                    PLog.warning("无效的物品类型: $materialName")
+                    luaState.push(0)
+                    return@push 1
+                }
+            } else {
+                // 第二个参数是物品对象，按精确匹配处理
+                val item: ItemStack?
+                if (luaState.isTable(2)) {
+                    luaState.getField(2, "__item")
+                    item = luaState.toJavaObject(-1) as? ItemStack
+                    luaState.pop(1)
+                } else {
+                    item = luaState.toJavaObject(2) as? ItemStack
+                }
+
+                if (item == null) {
+                    luaState.push(0)
+                    return@push 1
+                }
+                count = itemManager.getSpecificItemCount(player, item)
             }
+
+            luaState.push(count.toLong())
+            return@push 1
         }
         lua.setField(-2, "count")
 
@@ -244,7 +320,6 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
             while (luaState.next(2) != 0) {
                 val item: ItemStack?
                 if (luaState.isTable(-1)) {
-                    // 从物品表中获取实际的ItemStack
                     luaState.getField(-1, "__item")
                     item = luaState.toJavaObject(-1) as? ItemStack
                     luaState.pop(1)

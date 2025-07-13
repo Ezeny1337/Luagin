@@ -209,19 +209,6 @@ object PermissionAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "get_group_info")
 
-        // get_group_weight 函数 - 获取权限组权重
-        lua.push { luaState ->
-            if (luaState.top < 1) {
-                luaState.push(0)
-                return@push 1
-            }
-
-            val groupName = luaState.toString(1) ?: ""
-            luaState.push(permissionManager.getGroupWeight(groupName).toLong())
-            return@push 1
-        }
-        lua.setField(-2, "get_group_weight")
-
         // set_group_weight 函数 - 设置权限组权重
         lua.push { luaState ->
             if (luaState.top < 2) {
@@ -236,6 +223,19 @@ object PermissionAPI : LuaAPIProvider, KoinComponent {
             return@push 1
         }
         lua.setField(-2, "set_group_weight")
+
+        // get_group_weight 函数 - 获取权限组权重
+        lua.push { luaState ->
+            if (luaState.top < 1) {
+                luaState.push(0)
+                return@push 1
+            }
+
+            val groupName = luaState.toString(1) ?: ""
+            luaState.push(permissionManager.getGroupWeight(groupName).toLong())
+            return@push 1
+        }
+        lua.setField(-2, "get_group_weight")
 
         // set_group_inherit 函数 - 设置权限组继承关系
         lua.push { luaState ->
