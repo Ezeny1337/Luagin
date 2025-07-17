@@ -80,6 +80,13 @@ object LanguageUtils {
             enConfig.set("log.warning.invalid_timezone", "Invalid timezone: {0}")
             enConfig.set("log.warning.get_overworld_time_failed", "Failed to get Overworld time: {0}")
             enConfig.set("log.warning.get_tps_failed", "Failed to get TPS: {0}")
+            enConfig.set("log.warning.run_timer_failed","Failed to run timer: {0}")
+            enConfig.set("log.warning.run_timer_once_failed","Failed to run timer once: {0}")
+            enConfig.set("log.warning.cancel_timer_failed","Failed to cancel timer: {0}")
+            enConfig.set("log.warning.load_guidata_failed","Failed to load storage data: {0}")
+            enConfig.set("log.warning.save_guidata_failed","Failed to save storage data: {0}")
+            enConfig.set("log.warning.serialize_item_failed","Failed to serialize item: {0}")
+            enConfig.set("log.warning.deserialize_item_failed","Failed to deserialize item: {0}")
 
             // 严重级别消息
             enConfig.set("log.severe.copy_shared_api_failed", "Shared API: {0} is nil in the main environment")
@@ -174,6 +181,13 @@ object LanguageUtils {
             zhConfig.set("log.warning.invalid_timezone", "无效的时区: {0}")
             zhConfig.set("log.warning.get_overworld_time_failed", "获取主世界时间失败: {0}")
             zhConfig.set("log.warning.get_tps_failed", "获取 TPS 失败: {0}")
+            zhConfig.set("log.warning.run_timer_failed","执行循环定时器失败: {0}")
+            zhConfig.set("log.warning.run_timer_once_failed","执行单次定时器失败: {0}")
+            zhConfig.set("log.warning.cancel_timer_failed","取消定时器失败: {0}")
+            zhConfig.set("log.warning.load_guidata_failed","加载 GUI 存储数据时失败: {0}")
+            zhConfig.set("log.warning.save_guidata_failed","保存 GUI 存储数据时失败: {0}")
+            zhConfig.set("log.warning.serialize_item_failed","序列化物品时失败: {0}")
+            zhConfig.set("log.warning.deserialize_item_failed","反序列化物品时失败: {0}")
 
             // 严重级别消息
             zhConfig.set("log.severe.copy_shared_api_failed", "共享 API: {0} 在主环境为 nil")

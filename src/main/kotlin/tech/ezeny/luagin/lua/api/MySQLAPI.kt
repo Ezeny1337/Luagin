@@ -15,7 +15,7 @@ object MySQLAPI : LuaAPIProvider, KoinComponent {
         // 创建 mysql 表
         lua.newTable()
 
-        // create_table 函数 - 创建表
+        // create_table(table_name: string, columns: table): boolean - 创建表
         lua.push { luaState ->
             if (luaState.top < 2) {
                 luaState.push(false)
@@ -53,7 +53,7 @@ object MySQLAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "create_table")
 
-        // insert 函数 - 插入数据
+        // insert(table_name: string, values: table[, callback: function(id)]) - 插入数据
         lua.push { luaState ->
             if (luaState.top < 2) {
                 luaState.push(-1)
@@ -99,7 +99,7 @@ object MySQLAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "insert")
 
-        // update 函数 - 更新数据
+        // update(table_name: string, values: table, where: string, where_args: table[, callback: function(affected_rows)]) - 更新数据
         lua.push { luaState ->
             if (luaState.top < 4) {
                 luaState.push(-1)
@@ -160,7 +160,7 @@ object MySQLAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "update")
 
-        // query 函数 - 查询数据
+        // query(table_name: string, values: table, where: string, where_args: table[, callback: function(results)]) - 查询数据
         lua.push { luaState ->
             if (luaState.top < 1) {
                 luaState.pushNil()

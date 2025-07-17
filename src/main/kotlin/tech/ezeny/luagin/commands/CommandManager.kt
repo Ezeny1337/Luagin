@@ -160,13 +160,6 @@ class CommandManager(private val plugin: Luagin, private val permissionManager: 
     }
 
     /**
-     * 获取已注册的命令
-     */
-    fun getCommand(name: String): LuaCommand? {
-        return registeredCommands[name]
-    }
-
-    /**
      * 获取参数的权限
      * @param commandName 命令名
      * @param position 参数位置

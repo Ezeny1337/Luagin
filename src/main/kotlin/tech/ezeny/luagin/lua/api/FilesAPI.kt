@@ -16,7 +16,7 @@ object FilesAPI : LuaAPIProvider {
         // 创建 files 表
         lua.newTable()
 
-        // read 函数 - 读取文件内容
+        // read(path: string): string
         lua.push { luaState ->
             if (luaState.top < 1) {
                 luaState.pushNil()
@@ -35,7 +35,7 @@ object FilesAPI : LuaAPIProvider {
         }
         lua.setField(-2, "read")
 
-        // write 函数 - 写入文件内容
+        // write(path: string, contents: string[, is_binary: boolean]): boolean
         lua.push { luaState ->
             if (luaState.top < 2) {
                 luaState.push(false)
@@ -52,7 +52,7 @@ object FilesAPI : LuaAPIProvider {
         }
         lua.setField(-2, "write")
 
-        // create_folder 函数 - 创建文件夹
+        // create_folder(path: string): boolean
         lua.push { luaState ->
             if (luaState.top < 1) {
                 luaState.push(false)
@@ -66,7 +66,7 @@ object FilesAPI : LuaAPIProvider {
         }
         lua.setField(-2, "create_folder")
 
-        // create_file 函数 - 创建文件
+        // create_file(path: string): boolean
         lua.push { luaState ->
             if (luaState.top < 1) {
                 luaState.push(false)
@@ -80,7 +80,7 @@ object FilesAPI : LuaAPIProvider {
         }
         lua.setField(-2, "create_file")
 
-        // exists 函数 - 检查文件或文件夹是否存在
+        // exists(path: string): boolean
         lua.push { luaState ->
             if (luaState.top < 1) {
                 luaState.push(false)
@@ -94,7 +94,7 @@ object FilesAPI : LuaAPIProvider {
         }
         lua.setField(-2, "exists")
 
-        // list_dir 函数 - 列出目录内容
+        // list_dir(path: string): table<string>
         lua.push { luaState ->
             if (luaState.top < 1) {
                 luaState.pushNil()
@@ -118,7 +118,7 @@ object FilesAPI : LuaAPIProvider {
         }
         lua.setField(-2, "list_dir")
 
-        // delete 函数 - 删除文件或文件夹
+        // delete(path: string): boolean
         lua.push { luaState ->
             if (luaState.top < 1) {
                 luaState.push(false)

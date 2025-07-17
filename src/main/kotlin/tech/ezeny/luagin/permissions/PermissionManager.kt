@@ -380,14 +380,6 @@ class PermissionManager(private val plugin: Luagin, private val yamlManager: Yam
     }
 
     /**
-     * 获取权限组继承关系
-     */
-    fun getGroupInheritance(groupName: String): List<String> {
-        val config = yamlManager.getConfig(configFile) ?: return emptyList()
-        return config.getStringList("groups.$groupName.inherit")
-    }
-
-    /**
      * 设置权限组继承关系
      */
     fun setGroupInheritance(groupName: String, inherit: List<String>): Boolean {

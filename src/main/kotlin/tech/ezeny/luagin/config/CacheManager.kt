@@ -37,14 +37,6 @@ class CacheManager {
         cache[key] = entry
     }
 
-    fun remove(key: String) {
-        cache.remove(key)
-    }
-
-    fun clear() {
-        cache.clear()
-    }
-
     fun scheduleWrite(key: String, operation: () -> Unit, delay: Duration = 1.toDuration(DurationUnit.SECONDS)) {
         writeQueue.computeIfAbsent(key) { mutableListOf() }.add(operation)
         

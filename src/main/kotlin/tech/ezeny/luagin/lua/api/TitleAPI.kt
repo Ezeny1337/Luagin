@@ -15,7 +15,7 @@ object TitleAPI : LuaAPIProvider {
     }
 
     override fun registerAPI(lua: Lua) {
-        // print_title 函数 - 输出内容到标题位置
+        // print_title(title: string, sub_title: string[, player_name: string, fade_in:number, stay:number, fade_out:number]) - 输出内容到标题位置
         lua.push { luaState ->
             if (luaState.top < 2) {
                 return@push 0

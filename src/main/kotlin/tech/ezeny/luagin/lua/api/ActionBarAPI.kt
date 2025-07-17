@@ -15,7 +15,7 @@ object ActionBarAPI : LuaAPIProvider {
     }
 
     override fun registerAPI(lua: Lua) {
-        // print_actionbar 全局函数 - 输出内容到 ActionBar 位置
+        // print_actionbar(text: string[, player_name: string]) - 输出内容到 ActionBar 位置
         lua.push { luaState ->
             if (luaState.top < 1) {
                 return@push 0

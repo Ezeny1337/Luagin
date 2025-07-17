@@ -10,6 +10,7 @@ import tech.ezeny.luagin.lua.api.ConsoleAPI
 import tech.ezeny.luagin.lua.api.EventsAPI
 import tech.ezeny.luagin.lua.api.FilesAPI
 import tech.ezeny.luagin.lua.api.GlobalsAPI
+import tech.ezeny.luagin.lua.api.GuiAPI
 import tech.ezeny.luagin.lua.api.ItemsAPI
 import tech.ezeny.luagin.lua.api.MySQLAPI
 import tech.ezeny.luagin.lua.api.NetworkAPI
@@ -38,7 +39,8 @@ class APIRegister(private val plugin: Luagin) {
         NetworkAPI,
         ConsoleAPI,
         GlobalsAPI,
-        ItemsAPI
+        ItemsAPI,
+        GuiAPI
     )
 
     init {

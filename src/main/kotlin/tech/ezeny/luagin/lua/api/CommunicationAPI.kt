@@ -12,7 +12,7 @@ object CommunicationAPI : LuaAPIProvider, KoinComponent {
         // 创建 comm 表
         lua.newTable()
 
-        // expose_func 函数 - 暴露函数
+        // expose_func(function_name: string, callback: function): boolean - 暴露函数
         lua.push { luaState ->
             if (luaState.top < 2) {
                 return@push 0
@@ -35,7 +35,7 @@ object CommunicationAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "expose_func")
 
-        // unexpose_func 函数 - 取消暴露函数
+        // unexpose_func(function_name: string): boolean - 取消暴露函数
         lua.push { luaState ->
             if (luaState.top < 1) {
                 return@push 0
@@ -48,7 +48,7 @@ object CommunicationAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "unexpose_func")
 
-        // call_func 函数 - 调用暴露的函数
+        // call_func(script_name: string, function_name: string[, ...]): any - 调用暴露的函数
         lua.push { luaState ->
             if (luaState.top < 2) {
                 return@push 0
@@ -68,14 +68,6 @@ object CommunicationAPI : LuaAPIProvider, KoinComponent {
             return@push 1
         }
         lua.setField(-2, "call_func")
-
-        // get_exposed_functions 函数 - 获取所有暴露函数
-        lua.push { luaState ->
-            val exposedFunctions = CommunicationUtils.getExposedFunctions()
-            luaState.push(exposedFunctions)
-            return@push 1
-        }
-        lua.setField(-2, "get_exposed_functions")
 
         lua.setGlobal("comm")
 

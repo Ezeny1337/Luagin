@@ -71,8 +71,8 @@ class ItemManager {
 
         // 设置自定义模型数据 - 使用新的API
         if (customModelData != null) {
-            val component = meta.getCustomModelDataComponent()
-            component.setFloats(listOf(customModelData.toFloat()))
+            val component = meta.customModelDataComponent
+            component.floats = listOf(customModelData.toFloat())
             meta.setCustomModelDataComponent(component)
         }
 

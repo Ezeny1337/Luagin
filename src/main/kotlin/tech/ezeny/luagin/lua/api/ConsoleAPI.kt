@@ -13,7 +13,7 @@ object ConsoleAPI : LuaAPIProvider {
     }
 
     override fun registerAPI(lua: Lua) {
-        // print 全局函数
+        // print(text: string[, ...])
         lua.push { luaState ->
             val messages = mutableListOf<String>()
 

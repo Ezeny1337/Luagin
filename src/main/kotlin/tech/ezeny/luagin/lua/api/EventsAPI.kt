@@ -22,7 +22,7 @@ object EventsAPI : LuaAPIProvider, KoinComponent {
         eventCategories.forEach { (categoryName, basePackage) ->
             lua.newTable()
 
-            // 注册事件处理器的方法
+            // set(event_name:string, callback: function)
             lua.push { luaState ->
                 if (luaState.top < 2) {
                     return@push 0

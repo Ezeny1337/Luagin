@@ -23,7 +23,7 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
         // 创建 items 表
         lua.newTable()
 
-        // create 函数 - 创建基础物品
+        // create(material: string): item - 创建基础物品
         lua.push { luaState ->
             if (luaState.top < 1 || !luaState.isString(1)) {
                 return@push 0
@@ -38,7 +38,7 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "create")
 
-        // create_custom 函数 - 创建自定义物品
+        // create_custom(material: string[, display_name: string, lore: string]): item - 创建自定义物品
         lua.push { luaState ->
             if (luaState.top < 1 || !luaState.isString(1)) {
                 return@push 0
@@ -69,7 +69,7 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "create_custom")
 
-        // create_skull 函数 - 创建头颅
+        // create_skull(owner: string[, display_name: string, lore: string]): item - 创建头颅
         lua.push { luaState ->
             if (luaState.top < 1 || !luaState.isString(1)) {
                 return@push 0
@@ -95,7 +95,8 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "create_skull")
 
-        // give 函数 - 给予玩家物品
+        // give(player_name: string, item: item[, amount: number]): boolean - 给予玩家物品
+        // give(player_name: string, material: string[, amount: number]): boolean
         lua.push { luaState ->
             if (luaState.top < 2) {
                 return@push 0
@@ -144,7 +145,8 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "give")
 
-        // remove 函数 - 移除玩家物品
+        // remove(player_name: string, item: item[, amount: number]): boolean - 移除玩家物品
+        // remove(player_name: string, material: string[, amount: number]): boolean
         lua.push { luaState ->
             if (luaState.top < 2) {
                 return@push 0
@@ -188,7 +190,8 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "remove")
 
-        // has 函数 - 检查玩家是否拥有物品
+        // has(player_name: string, item: item[, amount: number]): boolean - 检查玩家是否拥有物品
+        // has(player_name: string, material: string[, amount: number]): boolean
         lua.push { luaState ->
             if (luaState.top < 2) {
                 return@push 0
@@ -232,7 +235,8 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "has")
 
-        // count 函数 - 获取玩家拥有的物品数量
+        // count(player_name: string, item: item): number - 获取玩家拥有的物品数量
+        // count(player_name: string, material: string): number
         lua.push { luaState ->
             if (luaState.top < 2) {
                 return@push 0
@@ -281,7 +285,7 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "count")
 
-        // clear_inventory 函数 - 清空玩家背包
+        // clear_inventory(player_name: string): boolean - 清空玩家背包
         lua.push { luaState ->
             if (luaState.top < 1 || !luaState.isString(1)) {
                 return@push 0
@@ -301,7 +305,7 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "clear_inventory")
 
-        // set_inventory 函数 - 设置玩家背包内容
+        // set_inventory(player_name: string, items: table): boolean - 设置玩家背包内容
         lua.push { luaState ->
             if (luaState.top < 2 || !luaState.isString(1) || !luaState.isTable(2)) {
                 return@push 0
@@ -338,7 +342,7 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "set_inventory")
 
-        // get_inventory 函数 - 获取玩家背包内容
+        // get_inventory(player_name: string): boolean - 获取玩家背包内容
         lua.push { luaState ->
             if (luaState.top < 1 || !luaState.isString(1)) {
                 return@push 0
@@ -369,17 +373,19 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
         }
     }
 
+    override fun getAPINames(): List<String> = apiNames
+
     /**
      * 将物品推送到 Lua
      */
     private fun pushItem(lua: Lua, item: ItemStack) {
-        // 创建物品表
         lua.newTable()
 
+        // 绑定 ItemStack 实例
         lua.pushJavaObject(item)
         lua.setField(-2, "__item")
 
-        // set_amount 方法 - 设置物品数量
+        // set_amount(amount: number): item - 设置物品数量
         lua.push { luaState ->
             if (luaState.top < 1 || !luaState.isNumber(2)) {
                 return@push 0
@@ -397,7 +403,7 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "set_amount")
 
-        // get_amount 方法 - 获取物品数量
+        // get_amount(): number - 获取物品数量
         lua.push { luaState ->
             luaState.getField(1, "__item")
             val item = luaState.toJavaObject(-1) as? ItemStack
@@ -413,7 +419,27 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "get_amount")
 
-        // get_data 方法 - 获取物品持久化数据
+        // set_data(key: string, value: string[, namespace: string]): item - 设置物品持久化数据
+        lua.push { luaState ->
+            if (luaState.top < 2 || !luaState.isString(2) || !luaState.isString(3)) {
+                return@push 0
+            }
+
+            luaState.getField(1, "__item")
+            val item = luaState.toJavaObject(-1) as? ItemStack ?: return@push 0
+            luaState.pop(1)
+
+            val key = luaState.toString(2) ?: return@push 0
+            val value = luaState.toString(3) ?: return@push 0
+            val namespace = if (luaState.top > 3 && luaState.isString(4)) luaState.toString(4) ?: "luagin" else "luagin"
+
+            val modifiedItem = itemManager.setPersistentData(item, key, value, namespace)
+            pushItem(lua, modifiedItem)
+            return@push 1
+        }
+        lua.setField(-2, "set_data")
+
+        // get_data(key: string[, namespace: string]): string - 获取物品持久化数据
         lua.push { luaState ->
             if (luaState.top < 1 || !luaState.isString(2)) {
                 return@push 0
@@ -436,27 +462,7 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "get_data")
 
-        // set_data 方法 - 设置物品持久化数据
-        lua.push { luaState ->
-            if (luaState.top < 2 || !luaState.isString(2) || !luaState.isString(3)) {
-                return@push 0
-            }
-
-            luaState.getField(1, "__item")
-            val item = luaState.toJavaObject(-1) as? ItemStack ?: return@push 0
-            luaState.pop(1)
-
-            val key = luaState.toString(2) ?: return@push 0
-            val value = luaState.toString(3) ?: return@push 0
-            val namespace = if (luaState.top > 3 && luaState.isString(4)) luaState.toString(4) ?: "luagin" else "luagin"
-
-            val modifiedItem = itemManager.setPersistentData(item, key, value, namespace)
-            pushItem(lua, modifiedItem)
-            return@push 1
-        }
-        lua.setField(-2, "set_data")
-
-        // has_data 方法 - 检查物品是否有持久化数据
+        // has_data(key: string[, namespace: string]): boolean - 检查物品是否有持久化数据
         lua.push { luaState ->
             if (luaState.top < 1 || !luaState.isString(2)) {
                 return@push 0
@@ -475,7 +481,7 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "has_data")
 
-        // get_info 方法 - 获取物品信息
+        // get_info(): iteminfo - 获取物品信息
         lua.push { luaState ->
             luaState.getField(1, "__item")
             val item = luaState.toJavaObject(-1) as? ItemStack
@@ -533,6 +539,4 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
         lua.setMetatable(-3)
         lua.pop(1)
     }
-
-    override fun getAPINames(): List<String> = apiNames
 }

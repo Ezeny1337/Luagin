@@ -22,7 +22,7 @@ object CommandAPI : LuaAPIProvider, KoinComponent {
         // 创建 cmd 表
         lua.newTable()
 
-        // register 函数 - 注册命令
+        // register(command_name: string, permission: string, handler: function): cmd - 注册命令
         lua.push { luaState ->
             if (luaState.top < 3 || !luaState.isString(1) || !luaState.isString(2) || !luaState.isFunction(3)) {
                 return@push 0
@@ -35,12 +35,12 @@ object CommandAPI : LuaAPIProvider, KoinComponent {
             val command = commandManager.registerCommand(commandName, permission, lua, handlerRef)
 
             // 返回 LuaCommandWrapper
-            LuaCommandWrapper.pushToLua(luaState, command)
+            pushCommand(lua, command)
             return@push 1
         }
         lua.setField(-2, "register")
 
-        // exec 函数 - 执行命令
+        // exec(command: string): boolean - 执行命令
         lua.push { luaState ->
             if (luaState.top < 1 || !luaState.isString(1)) {
                 return@push 0
@@ -72,54 +72,66 @@ object CommandAPI : LuaAPIProvider, KoinComponent {
     override fun getAPINames(): List<String> = apiNames
 
     /**
-     * Lua命令包装器
+     * 将 Command 推送到 Lua
      */
-    class LuaCommandWrapper() {
-        companion object {
-            fun pushToLua(lua: Lua, command: LuaCommand) {
-                lua.newTable()
+    private fun pushCommand(lua: Lua, command: LuaCommand) {
+        lua.newTable()
 
-                // add_args 方法 - 给命令添加参数
-                lua.push { luaState ->
-                    if (luaState.top < 3 || !luaState.isNumber(2) || !luaState.isTable(3)) {
-                        return@push 1
-                    }
-                    val position = luaState.toInteger(2).toInt()
-                    val argsList = mutableListOf<String>()
-                    luaState.pushNil()
-                    while (luaState.next(3) != 0) {
-                        if (luaState.isString(-1)) {
-                            argsList.add(luaState.toString(-1) ?: "")
-                        }
-                        luaState.pop(1)
-                    }
-                    val permission = if (luaState.top > 3 && luaState.isString(4)) luaState.toString(4) ?: "" else ""
-                    command.addArgs(position, argsList, permission)
-                    return@push 1
-                }
-                lua.setField(-2, "add_args")
+        // 绑定 LuaCommand 实例
+        lua.pushJavaObject(command)
+        lua.setField(-2, "__command")
 
-                // add_args_for 方法 - 给上一级命令添加参数
-                lua.push { luaState ->
-                    if (luaState.top < 4 || !luaState.isNumber(2) || !luaState.isString(3) || !luaState.isTable(4)) {
-                        return@push 1
-                    }
-                    val position = luaState.toInteger(2).toInt()
-                    val previousArg = luaState.toString(3) ?: ""
-                    val argsList = mutableListOf<String>()
-                    luaState.pushNil()
-                    while (luaState.next(4) != 0) {
-                        if (luaState.isString(-1)) {
-                            argsList.add(luaState.toString(-1) ?: "")
-                        }
-                        luaState.pop(1)
-                    }
-                    val permission = if (luaState.top > 4 && luaState.isString(5)) luaState.toString(5) ?: "" else ""
-                    command.addArgsForPrevious(position, argsList, previousArg, permission)
-                    return@push 1
-                }
-                lua.setField(-2, "add_args_for")
+        // add_args(position: number, args_table: table[, permission: string]): cmd - 给命令添加参数
+        lua.push { luaState ->
+            luaState.getField(1, "__command")
+            val commandObj = luaState.toJavaObject(-1) as? LuaCommand
+            luaState.pop(1)
+
+            if (commandObj == null || luaState.top < 3 || !luaState.isNumber(2) || !luaState.isTable(3)) {
+                return@push 0
             }
+
+            val position = luaState.toInteger(2).toInt()
+            val argsList = mutableListOf<String>()
+            luaState.pushNil()
+            while (luaState.next(3) != 0) {
+                if (luaState.isString(-1)) {
+                    argsList.add(luaState.toString(-1) ?: "")
+                }
+                luaState.pop(1)
+            }
+            val permission = if (luaState.top > 3 && luaState.isString(4)) luaState.toString(4) ?: "" else ""
+
+            commandObj.addArgs(position, argsList, permission)
+            return@push 0
         }
+        lua.setField(-2, "add_args")
+
+        // add_args_for(position: number, previous_arg: string, args_table: table[, permission: string]): cmd - 给上一级命令添加参数
+        lua.push { luaState ->
+            luaState.getField(1, "__command")
+            val commandObj = luaState.toJavaObject(-1) as? LuaCommand
+            luaState.pop(1)
+
+            if (commandObj == null || luaState.top < 4 || !luaState.isNumber(2) || !luaState.isString(3) || !luaState.isTable(4)) {
+                return@push 0
+            }
+
+            val position = luaState.toInteger(2).toInt()
+            val previousArg = luaState.toString(3) ?: ""
+            val argsList = mutableListOf<String>()
+            luaState.pushNil()
+            while (luaState.next(4) != 0) {
+                if (luaState.isString(-1)) {
+                    argsList.add(luaState.toString(-1) ?: "")
+                }
+                luaState.pop(1)
+            }
+            val permission = if (luaState.top > 4 && luaState.isString(5)) luaState.toString(5) ?: "" else ""
+
+            commandObj.addArgsForPrevious(position, argsList, previousArg, permission)
+            return@push 0
+        }
+        lua.setField(-2, "add_args_for")
     }
 }

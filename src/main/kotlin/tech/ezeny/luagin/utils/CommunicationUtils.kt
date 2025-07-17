@@ -119,19 +119,6 @@ object CommunicationUtils {
     }
 
     /**
-     * 获取所有暴露的函数
-     *
-     * @return 包含所有暴露函数信息的 Map
-     */
-    fun getExposedFunctions(): Map<String, List<String>> {
-        val result = mutableMapOf<String, List<String>>()
-        exposedFunctions.forEach { (scriptName, functions) ->
-            result[scriptName] = functions.keys.toList()
-        }
-        return result
-    }
-
-    /**
      * 清除指定脚本的所有暴露函数
      *
      * @param scriptName 脚本名

@@ -14,7 +14,7 @@ object YamlAPI : LuaAPIProvider, KoinComponent {
         // 创建 yaml 表
         lua.newTable()
 
-        // get 函数 - 获取配置值
+        // get(path: string, key: string): any - 获取配置值
         lua.push { luaState ->
             if (luaState.top < 2) {
                 luaState.pushNil()
@@ -73,7 +73,7 @@ object YamlAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "get")
         
-        // set 函数 - 设置配置值
+        // set(path: string, key: string, value: any): boolean - 设置配置值
         lua.push { luaState ->
             if (luaState.top < 3) {
                 luaState.push(false)

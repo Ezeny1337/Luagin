@@ -19,7 +19,7 @@ object NetworkAPI : LuaAPIProvider {
         // 创建 network 表
         lua.newTable()
 
-        // get 函数 - 建立 GET 请求
+        // get(url: string[, headers: table, callback: function]): string - 建立 GET 请求
         lua.push { luaState ->
             if (luaState.top < 1) {
                 luaState.pushNil()
@@ -63,7 +63,7 @@ object NetworkAPI : LuaAPIProvider {
         }
         lua.setField(-2, "get")
 
-        // post 函数 - 建立 POST 请求
+        // post(url: string[, data: table, headers: table, callback: function]): string - 建立 POST 请求
         lua.push { luaState ->
             if (luaState.top < 1) {
                 luaState.pushNil()
