@@ -1,14 +1,18 @@
 package tech.ezeny.luagin.lua.api
 
 import org.bukkit.Bukkit
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import party.iroiro.luajava.Lua
 import party.iroiro.luajava.luajit.LuaJitConsts.LUA_REGISTRYINDEX
 import tech.ezeny.luagin.Luagin
 import tech.ezeny.luagin.lua.LuaValueFactory
+import tech.ezeny.luagin.performance.PerformanceMonitor
 import tech.ezeny.luagin.utils.PLog
 
-object UtilsAPI : LuaAPIProvider {
+object UtilsAPI : LuaAPIProvider, KoinComponent {
     private lateinit var plugin: Luagin
+    private val performanceMonitor: PerformanceMonitor by inject()
     private val apiNames = mutableListOf<String>()
 
     override fun initialize(plugin: Luagin) {
@@ -18,6 +22,14 @@ object UtilsAPI : LuaAPIProvider {
     override fun registerAPI(lua: Lua) {
         // 创建 utils 表
         lua.newTable()
+
+        // clock(): number - 获取程序运行时间（类似 os.clock()）
+        lua.push { luaState ->
+            val runtime = System.nanoTime() / 1000000.0 // 转换为毫秒
+            luaState.push(runtime)
+            return@push 1
+        }
+        lua.setField(-2, "clock")
 
         // run_timer(delay: number, period: number, callback: function[, ...]): number - 设置重复执行的定时器
         lua.push { luaState ->
@@ -121,13 +133,13 @@ object UtilsAPI : LuaAPIProvider {
             }
 
             val taskId = luaState.toInteger(1).toInt()
-            
+
             try {
                 val scheduler = Bukkit.getScheduler()
-                
+
                 // 尝试取消任务
                 scheduler.cancelTask(taskId)
-                
+
                 // 由于cancelTask没有返回值，我们假设取消成功
                 // 如果任务不存在，cancelTask也不会抛出异常
                 luaState.push(true)
@@ -139,6 +151,79 @@ object UtilsAPI : LuaAPIProvider {
             }
         }
         lua.setField(-2, "cancel_timer")
+
+        // get_all_perf(): table - 获取所有性能数据
+        lua.push { luaState ->
+            val data = performanceMonitor.getAllPerformanceData()
+            LuaValueFactory.pushJavaObject(lua, data)
+            return@push 1
+        }
+        lua.setField(-2, "get_all_perf")
+
+        // get_server_perf(): table - 获取服务器性能数据
+        lua.push { luaState ->
+            val data = performanceMonitor.getPerformanceData("server")
+            if (data != null) {
+                LuaValueFactory.pushJavaObject(lua, data)
+            } else {
+                luaState.pushNil()
+            }
+            return@push 1
+        }
+        lua.setField(-2, "get_server_perf")
+
+        // get_java_perf(): table - 获取 Java 性能数据
+        lua.push { luaState ->
+            val data = performanceMonitor.getPerformanceData("java")
+            if (data != null) {
+                LuaValueFactory.pushJavaObject(lua, data)
+            } else {
+                luaState.pushNil()
+            }
+            return@push 1
+        }
+        lua.setField(-2, "get_java_perf")
+
+        // get_system_perf(): table - 获取系统性能数据
+        lua.push { luaState ->
+            val data = performanceMonitor.getPerformanceData("system")
+            if (data != null) {
+                LuaValueFactory.pushJavaObject(lua, data)
+            } else {
+                luaState.pushNil()
+            }
+            return@push 1
+        }
+        lua.setField(-2, "get_system_perf")
+
+        // get_tps(): table - 获取 TPS 信息
+        lua.push { luaState ->
+            try {
+                val tps = performanceMonitor.getServerTPS()
+
+                luaState.newTable()
+                luaState.push(tps[0])
+                luaState.rawSetI(-2, 1)
+                luaState.push(tps[1])
+                luaState.rawSetI(-2, 2)
+                luaState.push(tps[2])
+                luaState.rawSetI(-2, 3)
+
+                return@push 1
+            } catch (e: Exception) {
+                PLog.warning("log.warning.get_tps_failed", e.message ?: "Unknown error")
+                luaState.pushNil()
+                return@push 1
+            }
+        }
+        lua.setField(-2, "get_tps")
+
+        // clear_perf_cache() - 清理性能数据缓存
+        lua.push { luaState ->
+            performanceMonitor.clearCache()
+            return@push 1
+        }
+        lua.setField(-2, "clear_perf_cache")
 
         lua.setGlobal("utils")
 

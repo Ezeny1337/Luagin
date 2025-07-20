@@ -83,6 +83,7 @@ class EventManager(private val plugin: Luagin) : Listener {
      * @param eventName 事件类的名称
      * @param handler Lua 事件处理函数
      */
+    @Suppress("UNCHECKED_CAST")
     fun registerLuaEventHandler(basePackage: String, eventName: String, handler: LuaJITEventHandler) {
         try {
             // 尝试加载事件类

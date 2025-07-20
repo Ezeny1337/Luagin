@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "tech.ezeny"
-version = "2.3.0"
+version = "2.4.0"
 
 repositories {
     mavenCentral()
@@ -29,6 +29,7 @@ dependencies {
     implementation("io.insert-koin:koin-core:4.0.4")
     implementation("com.zaxxer:HikariCP:6.3.0")
     implementation("com.mysql:mysql-connector-j:9.3.0")
+    implementation("com.github.oshi:oshi-core:6.8.2")
 }
 
 val targetJavaVersion = 21
@@ -53,6 +54,15 @@ tasks {
     shadowJar {
         archiveClassifier.set("")
         minimize()
+
+        exclude(
+            "META-INF/AL2.0",
+            "META-INF/LGPL2.1",
+            "META-INF/LICENSE",
+            "META-INF/NOTICE",
+            "META-INF/INDEX.LIST",
+            "META-INF/*.kotlin_module"
+        )
     }
 
     runServer {

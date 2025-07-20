@@ -87,6 +87,10 @@ object LanguageUtils {
             enConfig.set("log.warning.save_guidata_failed","Failed to save storage data: {0}")
             enConfig.set("log.warning.serialize_item_failed","Failed to serialize item: {0}")
             enConfig.set("log.warning.deserialize_item_failed","Failed to deserialize item: {0}")
+            enConfig.set("log.warning.main_perf_update_failed","Failed to update main thread performance data: {0}")
+            enConfig.set("log.warning.async_perf_update_failed","Failed to update asynchronous performance data: {0}")
+            enConfig.set("log.warning.get_per_cpu_failed","Failed to get the usage percent of each CPU core: {0}")
+            enConfig.set("log.warning.format_datetime_failed","Failed to format datetime: {0}")
 
             // 严重级别消息
             enConfig.set("log.severe.copy_shared_api_failed", "Shared API: {0} is nil in the main environment")
@@ -188,6 +192,10 @@ object LanguageUtils {
             zhConfig.set("log.warning.save_guidata_failed","保存 GUI 存储数据时失败: {0}")
             zhConfig.set("log.warning.serialize_item_failed","序列化物品时失败: {0}")
             zhConfig.set("log.warning.deserialize_item_failed","反序列化物品时失败: {0}")
+            zhConfig.set("log.warning.main_perf_update_failed","主线程更新性能数据失败: {0}")
+            zhConfig.set("log.warning.async_perf_update_failed","异步更新性能数据失败: {0}")
+            zhConfig.set("log.warning.get_per_cpu_failed","获取每个 CPU 核心的使用率失败: {0}")
+            zhConfig.set("log.warning.format_datetime_failed","格式化日期时间失败: {0}")
 
             // 严重级别消息
             zhConfig.set("log.severe.copy_shared_api_failed", "共享 API: {0} 在主环境为 nil")

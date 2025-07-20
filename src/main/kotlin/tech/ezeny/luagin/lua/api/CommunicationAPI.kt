@@ -1,11 +1,10 @@
 package tech.ezeny.luagin.lua.api
 
-import org.koin.core.component.KoinComponent
 import party.iroiro.luajava.Lua
 import tech.ezeny.luagin.lua.LuaValueFactory
 import tech.ezeny.luagin.utils.CommunicationUtils
 
-object CommunicationAPI : LuaAPIProvider, KoinComponent {
+object CommunicationAPI : LuaAPIProvider {
     private val apiNames = mutableListOf<String>()
 
     override fun registerAPI(lua: Lua) {

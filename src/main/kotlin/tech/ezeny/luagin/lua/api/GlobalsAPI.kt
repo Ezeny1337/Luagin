@@ -1,5 +1,6 @@
 package tech.ezeny.luagin.lua.api
 
+import org.bukkit.Bukkit
 import party.iroiro.luajava.Lua
 import tech.ezeny.luagin.Luagin
 import tech.ezeny.luagin.lua.LuaValueFactory
@@ -29,6 +30,16 @@ object GlobalsAPI : LuaAPIProvider {
         val timestamp = System.currentTimeMillis().toDouble()
         lua.push(timestamp)
         lua.setField(-2, "timestamp")
+
+        // online_players : number - 当前在线玩家数
+        val onlinePlayers = Bukkit.getOnlinePlayers().size
+        lua.push(onlinePlayers.toDouble())
+        lua.setField(-2, "online_players")
+
+        // max_players : number - 最大玩家数
+        val maxPlayers = Bukkit.getServer().maxPlayers
+        lua.push(maxPlayers.toDouble())
+        lua.setField(-2, "max_players")
 
         // get_realtime([zoneid: string]): realtime - 获取实时时间
         lua.push { luaState ->
@@ -80,27 +91,22 @@ object GlobalsAPI : LuaAPIProvider {
         }
         lua.setField(-2, "get_datetime")
 
-        // get_tps(): table - 获取服务器 tps
+        // date([format: string, zoneid: string]): string - 格式化日期时间（类似 os.date()）
         lua.push { luaState ->
+            val format = if (luaState.top >= 1) luaState.toString(1) ?: "%Y-%m-%d %H:%M:%S" else "%Y-%m-%d %H:%M:%S"
+            val zoneStr = if (luaState.top >= 2) luaState.toString(2) ?: "UTC" else "UTC"
+
             try {
-                val tps = GlobalUtils.getServerTPS()
-
-                luaState.newTable()
-                luaState.push(tps[0])
-                luaState.rawSetI(-2, 1)
-                luaState.push(tps[1])
-                luaState.rawSetI(-2, 2)
-                luaState.push(tps[2])
-                luaState.rawSetI(-2, 3)
-
+                val formattedDate = GlobalUtils.formatDateTime(format, zoneStr)
+                luaState.push(formattedDate)
                 return@push 1
             } catch (e: Exception) {
-                PLog.warning("log.warning.get_tps_failed", e.message ?: "Unknown error")
+                PLog.warning("log.warning.date_format_failed", e.message ?: "Unknown error")
                 luaState.pushNil()
                 return@push 1
             }
         }
-        lua.setField(-2, "get_tps")
+        lua.setField(-2, "date")
 
         lua.setGlobal("globals")
 

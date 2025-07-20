@@ -2,10 +2,9 @@ package tech.ezeny.luagin.lua
 
 import party.iroiro.luajava.Lua
 import party.iroiro.luajava.luajit.LuaJit
-import tech.ezeny.luagin.Luagin
 import tech.ezeny.luagin.utils.PLog
 
-class LuaEnvManager(plugin: Luagin, val apiRegister: APIRegister) {
+class LuaEnvManager(val apiRegister: APIRegister) {
 
     init {
         PLog.info("log.info.api_register_initialized")
