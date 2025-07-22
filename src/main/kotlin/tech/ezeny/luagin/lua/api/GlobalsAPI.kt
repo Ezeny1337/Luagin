@@ -19,27 +19,20 @@ object GlobalsAPI : LuaAPIProvider {
 
     override fun registerAPI(lua: Lua) {
         // 创建 globals 表
-        lua.newTable()
-
-        // owtime : number - 主世界 Overworld 的相对游戏时间
-        val time = GlobalUtils.getOverworldTime()
-        lua.push(time.toDouble())
-        lua.setField(-2, "owtime")
+        lua.newTable() // globals
 
         // timestamp : number - 当前时间戳
-        val timestamp = System.currentTimeMillis().toDouble()
-        lua.push(timestamp)
+        lua.push(System.currentTimeMillis().toDouble())
         lua.setField(-2, "timestamp")
 
-        // online_players : number - 当前在线玩家数
-        val onlinePlayers = Bukkit.getOnlinePlayers().size
-        lua.push(onlinePlayers.toDouble())
+        // online_players : table - 玩家名字列表
+        val playerNames = GlobalUtils.getOverworldPlayerNames()
+        lua.newTable()
+        playerNames.forEachIndexed { idx, name ->
+            lua.push(name)
+            lua.rawSetI(-2, idx + 1)
+        }
         lua.setField(-2, "online_players")
-
-        // max_players : number - 最大玩家数
-        val maxPlayers = Bukkit.getServer().maxPlayers
-        lua.push(maxPlayers.toDouble())
-        lua.setField(-2, "max_players")
 
         // get_realtime([zoneid: string]): realtime - 获取实时时间
         lua.push { luaState ->
@@ -108,6 +101,59 @@ object GlobalsAPI : LuaAPIProvider {
         }
         lua.setField(-2, "date")
 
+        // 设置元表
+        lua.newTable()
+
+        // __index
+        lua.push { luaState ->
+            val key = luaState.toString(2)
+            when (key) {
+                // owtime : number - 主世界 Overworld 的相对游戏时间
+                "owtime" -> {
+                    val time = GlobalUtils.getOverworldTime()
+                    luaState.push(time.toDouble())
+                    return@push 1
+                }
+                //owweather : string - 主世界的天气
+                "owweather" -> {
+                    val weather = GlobalUtils.getOverworldWeather()
+                    luaState.push(weather)
+                    return@push 1
+                }
+                else -> {
+                    luaState.getField(1, key)
+                    return@push 1
+                }
+            }
+        }
+        lua.setField(-2, "__index")
+
+        // __newindex
+        lua.push { luaState ->
+            val key = luaState.toString(2)
+            when (key) {
+                "owtime" -> {
+                    val newTime = luaState.toInteger(3)
+                    GlobalUtils.setOverworldTime(newTime.toLong())
+                    return@push 0
+                }
+                "owweather" -> {
+                    val newWeather = luaState.toString(3)
+                    if (newWeather != null) {
+                        GlobalUtils.setOverworldWeather(newWeather)
+                    }
+                    return@push 0
+                }
+                else -> {
+                    luaState.setField(1, key)
+                    return@push 0
+                }
+            }
+        }
+        lua.setField(-2, "__newindex")
+
+        // 绑定元表
+        lua.setMetatable(-2)
         lua.setGlobal("globals")
 
         if (!apiNames.contains("globals")) {

@@ -8,6 +8,7 @@ import tech.ezeny.luagin.commands.CommandManager
 import party.iroiro.luajava.Lua
 import party.iroiro.luajava.luajit.LuaJitConsts.LUA_REGISTRYINDEX
 import tech.ezeny.luagin.commands.LuaCommand
+import tech.ezeny.luagin.utils.PLog
 
 object CommandAPI : LuaAPIProvider, KoinComponent {
     private lateinit var plugin: Luagin
@@ -46,12 +47,14 @@ object CommandAPI : LuaAPIProvider, KoinComponent {
                 return@push 0
             }
             val command = luaState.toString(1) ?: return@push 0
-            tech.ezeny.luagin.utils.PLog.info("log.info.command_exec", command)
+
+            PLog.info("log.info.command_exec", command)
+
             Bukkit.getScheduler().runTask(plugin, Runnable {
                 try {
                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command)
                 } catch (e: Exception) {
-                    tech.ezeny.luagin.utils.PLog.warning(
+                    PLog.warning(
                         "log.warning.command_exec_failed",
                         command,
                         e.message ?: "Unknown error"

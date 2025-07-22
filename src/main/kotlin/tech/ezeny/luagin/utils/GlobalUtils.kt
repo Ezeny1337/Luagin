@@ -1,13 +1,26 @@
 package tech.ezeny.luagin.utils
 
 import org.bukkit.Bukkit
+import org.bukkit.World
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
 object GlobalUtils {
-    
+
+    /**
+     * 获取主世界
+     */
+    fun getOverworld(): World? {
+        return try {
+            Bukkit.getWorlds().find { it.environment == World.Environment.NORMAL }
+        } catch (e: Exception) {
+            PLog.warning("log.warning.get_overworld_failed", e.message ?: "Unknown error")
+            null
+        }
+    }
+
     /**
      * 获取主世界时间
      *
@@ -20,6 +33,65 @@ object GlobalUtils {
         } catch (e: Exception) {
             PLog.warning("log.warning.get_overworld_time_failed", e.message ?: "Unknown error")
             0L
+        }
+    }
+
+    /**
+     * 获取主世界天气
+     * @return CLEAR/RAIN/THUNDER/UNKNOWN
+     */
+    fun getOverworldWeather(): String {
+        val world = getOverworld()
+        return when {
+            world == null -> "UNKNOWN"
+            world.isThundering -> "THUNDER"
+            world.hasStorm() -> "RAIN"
+            else -> "CLEAR"
+        }
+    }
+
+    /**
+     * 设置主世界天气
+     * @param weather CLEAR/RAIN/THUNDER
+     */
+    fun setOverworldWeather(weather: String) {
+        val world = getOverworld() ?: return
+        when (weather.uppercase()) {
+            "CLEAR" -> {
+                world.setStorm(false)
+                world.isThundering = false
+            }
+            "RAIN" -> {
+                world.setStorm(true)
+                world.isThundering = false
+            }
+            "THUNDER" -> {
+                world.setStorm(true)
+                world.isThundering = true
+            }
+        }
+    }
+
+    /**
+     * 设置主世界时间
+     * @param time tick数 (0-23999)
+     */
+    fun setOverworldTime(time: Long) {
+        val world = getOverworld() ?: return
+        if (time in 0..23999) {
+            world.time = time
+        }
+    }
+
+    /**
+     * 获取主世界在线玩家名字列表
+     */
+    fun getOverworldPlayerNames(): List<String> {
+        return try {
+            Bukkit.getOnlinePlayers().map { it.name }
+        } catch (e: Exception) {
+            PLog.warning("log.warning.get_overworld_player_names_failed", e.message ?: "Unknown error")
+            emptyList()
         }
     }
 
@@ -61,11 +133,11 @@ object GlobalUtils {
         return try {
             val zone = ZoneId.of(zoneId)
             val now = ZonedDateTime.now(zone)
-            
+
             // 将 Lua 风格的格式转换为 Java 的 DateTimeFormatter 格式
             val javaFormat = convertLuaFormatToJava(format)
             val formatter = DateTimeFormatter.ofPattern(javaFormat, Locale.ENGLISH)
-            
+
             now.format(formatter)
         } catch (e: Exception) {
             PLog.warning("log.warning.format_datetime_failed", e.message ?: "Unknown error")

@@ -30,8 +30,7 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
             }
 
             val materialName = luaState.toString(1) ?: return@push 0
-
-            val material = Material.valueOf(materialName.uppercase())
+            val material = enumValueOf<Material>(materialName)
             val item = itemManager.createItem(material)
             pushItem(lua, item)
             return@push 1
@@ -45,6 +44,7 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
             }
 
             val materialName = luaState.toString(1) ?: return@push 0
+            val material = enumValueOf<Material>(materialName)
             val displayName = if (luaState.top > 1 && luaState.isString(2)) luaState.toString(2) else null
             val lore = if (luaState.top > 2 && luaState.isTable(3)) {
                 val loreList = mutableListOf<String>()
@@ -58,7 +58,6 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
                 loreList
             } else null
 
-            val material = Material.valueOf(materialName.uppercase())
             val item = itemManager.createCustomItem(
                 material = material,
                 displayName = displayName,
@@ -115,7 +114,7 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
             if (luaState.isString(2)) {
                 // 第二个参数是字符串
                 val materialName = luaState.toString(2) ?: return@push 0
-                val material = Material.valueOf(materialName.uppercase())
+                val material = enumValueOf<Material>(materialName.uppercase())
                 val item = itemManager.createItem(material)
                 item.amount = amount
                 success = itemManager.giveItem(player, item)
@@ -165,8 +164,7 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
             if (luaState.isString(2)) {
                 // 第二个参数是字符串
                 val materialName = luaState.toString(2) ?: return@push 0
-                val material = Material.valueOf(materialName.uppercase())
-                success = itemManager.removeItem(player, material, amount)
+                success = itemManager.removeItem(player, itemManager.materialToItemStack(materialName), amount)
             } else {
                 // 第二个参数是物品对象
                 val item: ItemStack?
@@ -182,7 +180,7 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
                     luaState.push(false)
                     return@push 1
                 }
-                success = itemManager.removeSpecificItem(player, item, amount)
+                success = itemManager.removeItem(player, item, amount)
             }
 
             luaState.push(success)
@@ -210,8 +208,8 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
             if (luaState.isString(2)) {
                 // 第二个参数是字符串
                 val materialName = luaState.toString(2) ?: return@push 0
-                val material = Material.valueOf(materialName.uppercase())
-                hasItem = itemManager.hasItem(player, material, amount)
+
+                hasItem = itemManager.hasItem(player, itemManager.materialToItemStack(materialName), amount)
             } else {
                 // 第二个参数是物品对象
                 val item: ItemStack?
@@ -227,7 +225,8 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
                     luaState.push(false)
                     return@push 1
                 }
-                hasItem = itemManager.hasSpecificItem(player, item, amount)
+
+                hasItem = itemManager.hasItem(player, item, amount)
             }
 
             luaState.push(hasItem)
@@ -254,14 +253,8 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
             if (luaState.isString(2)) {
                 // 第二个参数是字符串，按材质处理
                 val materialName = luaState.toString(2) ?: return@push 0
-                try {
-                    val material = Material.valueOf(materialName.uppercase())
-                    count = itemManager.getItemCount(player, material)
-                } catch (e: IllegalArgumentException) {
-                    PLog.warning("无效的物品类型: $materialName")
-                    luaState.push(0)
-                    return@push 1
-                }
+
+                count = itemManager.getItemCount(player, itemManager.materialToItemStack(materialName))
             } else {
                 // 第二个参数是物品对象，按精确匹配处理
                 val item: ItemStack?
@@ -277,7 +270,7 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
                     luaState.push(0)
                     return@push 1
                 }
-                count = itemManager.getSpecificItemCount(player, item)
+                count = itemManager.getItemCount(player, item)
             }
 
             luaState.push(count.toLong())
@@ -480,6 +473,87 @@ object ItemsAPI : LuaAPIProvider, KoinComponent {
             return@push 1
         }
         lua.setField(-2, "has_data")
+
+        // set_enchant(enchant: string, level: number): item - 设置附魔
+        lua.push { luaState ->
+            if (luaState.top < 2 || !luaState.isString(2) || !luaState.isNumber(3)) {
+                return@push 0
+            }
+            luaState.getField(1, "__item")
+            val item = luaState.toJavaObject(-1) as? ItemStack ?: return@push 0
+            luaState.pop(1)
+
+            val enchantName = luaState.toString(2) ?: return@push 0
+            val level = luaState.toInteger(3).toInt()
+            val modifiedItem = itemManager.setEnchant(item, enchantName, level)
+            pushItem(lua, modifiedItem)
+            return@push 1
+        }
+        lua.setField(-2, "set_enchant")
+
+        // set_flag(flag: string): item - 设置物品标志
+        lua.push { luaState ->
+            if (luaState.top < 1 || !luaState.isString(2)) {
+                return@push 0
+            }
+            luaState.getField(1, "__item")
+            val item = luaState.toJavaObject(-1) as? ItemStack ?: return@push 0
+            luaState.pop(1)
+
+            val flagName = luaState.toString(2) ?: return@push 0
+            val modifiedItem = itemManager.addItemFlag(item, flagName)
+            pushItem(lua, modifiedItem)
+            return@push 1
+        }
+        lua.setField(-2, "set_flag")
+
+        // set_unbreakable(unbreakable: boolean): item - 设置不可破坏
+        lua.push { luaState ->
+            if (luaState.top < 1 || !luaState.isBoolean(2)) {
+                return@push 0
+            }
+            luaState.getField(1, "__item")
+            val item = luaState.toJavaObject(-1) as? ItemStack ?: return@push 0
+            luaState.pop(1)
+
+            val unbreakable = luaState.toBoolean(2)
+            val modifiedItem = itemManager.setUnbreakable(item, unbreakable)
+            pushItem(lua, modifiedItem)
+            return@push 1
+        }
+        lua.setField(-2, "set_unbreakable")
+
+        // set_custom_model_data(data: number): item - 设置自定义模型数据
+        lua.push { luaState ->
+            if (luaState.top < 1 || !luaState.isNumber(2)) {
+                return@push 0
+            }
+            luaState.getField(1, "__item")
+            val item = luaState.toJavaObject(-1) as? ItemStack ?: return@push 0
+            luaState.pop(1)
+
+            val data = luaState.toInteger(2).toInt()
+            val modifiedItem = itemManager.setCustomModelData(item, data)
+            pushItem(lua, modifiedItem)
+            return@push 1
+        }
+        lua.setField(-2, "set_custom_model_data")
+
+        // set_durability(durability: number): item - 设置物品耐久度
+        lua.push { luaState ->
+            if (luaState.top < 1 || !luaState.isNumber(2)) {
+                return@push 0
+            }
+            luaState.getField(1, "__item")
+            val item = luaState.toJavaObject(-1) as? ItemStack ?: return@push 0
+            luaState.pop(1)
+
+            val durability = luaState.toInteger(2).toInt()
+            val modifiedItem = itemManager.setDurability(item, durability)
+            pushItem(lua, modifiedItem)
+            return@push 1
+        }
+        lua.setField(-2, "set_durability")
 
         // get_info(): iteminfo - 获取物品信息
         lua.push { luaState ->

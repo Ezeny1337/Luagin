@@ -3,15 +3,25 @@ package tech.ezeny.luagin.items
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
+import org.bukkit.Registry
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.Damageable
 import org.bukkit.inventory.meta.SkullMeta
 import org.bukkit.persistence.PersistentDataType
 import tech.ezeny.luagin.utils.ColorUtils
 
 class ItemManager {
+
+    /**
+     * 将材质名转换为 ItemStack
+     */
+    fun materialToItemStack(materialName: String): ItemStack {
+        val material = enumValueOf<Material>(materialName.uppercase())
+        return ItemStack(material)
+    }
 
     /**
      * 创建基础物品
@@ -28,52 +38,24 @@ class ItemManager {
      * @param material 物品材质
      * @param displayName 显示名称
      * @param lore 物品描述列表
-     * @param enchantments 附魔效果映射，键为附魔类型，值为等级
-     * @param itemFlags 物品标志集合，用于隐藏某些属性
-     * @param unbreakable 是否不可破坏
-     * @param customModelData 自定义模型数据，用于资源包
      * @return 创建的自定义物品
      */
     fun createCustomItem(
         material: Material,
         displayName: String? = null,
-        lore: List<String>? = null,
-        enchantments: Map<Enchantment, Int>? = null,
-        itemFlags: Set<ItemFlag>? = null,
-        unbreakable: Boolean = false,
-        customModelData: Int? = null
+        lore: List<String>? = null
     ): ItemStack {
-        val item = ItemStack(material, 1)
+        val item = ItemStack(material)
         val meta = item.itemMeta ?: return item
 
         // 设置显示名称
         if (displayName != null) {
-            meta.setDisplayName(ColorUtils.formatString(displayName))
+            ColorUtils.formatString(displayName).let { meta.setDisplayName(it) }
         }
 
-        // 设置Lore
+        // 设置 Lore
         if (lore != null) {
             meta.lore = lore.map { ColorUtils.formatString(it) }
-        }
-
-        // 设置附魔
-        enchantments?.forEach { (enchantment, level) ->
-            meta.addEnchant(enchantment, level, true)
-        }
-
-        // 设置物品标志
-        if (itemFlags != null) {
-            meta.addItemFlags(*itemFlags.toTypedArray())
-        }
-
-        // 设置不可破坏
-        meta.isUnbreakable = unbreakable
-
-        // 设置自定义模型数据 - 使用新的API
-        if (customModelData != null) {
-            val component = meta.customModelDataComponent
-            component.floats = listOf(customModelData.toFloat())
-            meta.setCustomModelDataComponent(component)
         }
 
         item.itemMeta = meta
@@ -104,7 +86,7 @@ class ItemManager {
             meta.setDisplayName(ColorUtils.formatString(displayName))
         }
 
-        // 设置Lore
+        // 设置 Lore
         if (lore != null) {
             meta.lore = lore.map { ColorUtils.formatString(it) }
         }
@@ -191,15 +173,7 @@ class ItemManager {
     /**
      * 从玩家背包移除物品
      */
-    fun removeItem(player: Player, material: Material, amount: Int): Boolean {
-        val result = player.inventory.removeItem(ItemStack(material, amount))
-        return result.isEmpty()
-    }
-
-    /**
-     * 从玩家背包移除指定物品
-     */
-    fun removeSpecificItem(player: Player, targetItem: ItemStack, amount: Int): Boolean {
+    fun removeItem(player: Player, targetItem: ItemStack, amount: Int): Boolean {
         var remainingAmount = amount
         val inventory = player.inventory
 
@@ -228,24 +202,11 @@ class ItemManager {
         return remainingAmount <= 0
     }
 
-    /**
-     * 检查玩家是否有指定物品
-     */
-    fun hasItem(player: Player, material: Material, amount: Int = 1): Boolean {
-        var count = 0
-        for (item in player.inventory.contents) {
-            if (item?.type == material) {
-                count += item.amount
-                if (count >= amount) return true
-            }
-        }
-        return false
-    }
 
     /**
      * 检查玩家是否有指定物品
      */
-    fun hasSpecificItem(player: Player, targetItem: ItemStack, amount: Int = 1): Boolean {
+    fun hasItem(player: Player, targetItem: ItemStack, amount: Int = 1): Boolean {
         var count = 0
         for (item in player.inventory.contents) {
             if (item != null && isSimilarItem(item, targetItem)) {
@@ -259,20 +220,7 @@ class ItemManager {
     /**
      * 获取玩家指定物品的数量
      */
-    fun getItemCount(player: Player, material: Material): Int {
-        var count = 0
-        for (item in player.inventory.contents) {
-            if (item?.type == material) {
-                count += item.amount
-            }
-        }
-        return count
-    }
-
-    /**
-     * 获取玩家指定物品的数量
-     */
-    fun getSpecificItemCount(player: Player, targetItem: ItemStack): Int {
+    fun getItemCount(player: Player, targetItem: ItemStack): Int {
         var count = 0
         for (item in player.inventory.contents) {
             if (item != null && isSimilarItem(item, targetItem)) {
@@ -289,7 +237,7 @@ class ItemManager {
         return try {
             player.inventory.clear()
             true
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }
@@ -310,7 +258,7 @@ class ItemManager {
                 }
             }
             true
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }
@@ -322,6 +270,84 @@ class ItemManager {
         return player.inventory.contents.filterNotNull()
     }
 
+    /**
+     * 设置附魔
+     */
+    fun setEnchant(item: ItemStack, enchantKeyOrName: String, level: Int): ItemStack {
+        val key = if (enchantKeyOrName.contains(":")) {
+            NamespacedKey.fromString(enchantKeyOrName)
+        } else {
+            NamespacedKey.minecraft(enchantKeyOrName.lowercase())
+        }
+
+        if (key == null) return item
+
+        val enchant = Registry.ENCHANTMENT.get(key) ?: return item
+        val meta = item.itemMeta ?: return item
+        meta.addEnchant(enchant, level, true)
+        item.itemMeta = meta
+        return item
+    }
+
+    /**
+     * 设置物品标志
+     */
+    fun addItemFlag(item: ItemStack, flagName: String): ItemStack {
+        val flag = try {
+            enumValueOf<ItemFlag>(flagName.uppercase())
+        } catch (_: Exception) {
+            return item
+        }
+        val meta = item.itemMeta ?: return item
+        meta.addItemFlags(flag)
+        item.itemMeta = meta
+        return item
+    }
+
+    /**
+     * 设置不可破坏
+     */
+    fun setUnbreakable(item: ItemStack, unbreakable: Boolean): ItemStack {
+        val meta = item.itemMeta ?: return item
+        meta.isUnbreakable = unbreakable
+        item.itemMeta = meta
+        return item
+    }
+
+    /**
+     * 设置自定义模型数据
+     */
+    fun setCustomModelData(item: ItemStack, data: Int): ItemStack {
+        val meta = item.itemMeta ?: return item
+        try {
+            val component = meta.customModelDataComponent
+            component.floats = listOf(data.toFloat())
+            meta.setCustomModelDataComponent(component)
+        } catch (_: Exception) {
+        }
+        item.itemMeta = meta
+        return item
+    }
+
+    /**
+     * 设置耐久度
+     */
+    fun setDurability(item: ItemStack, durability: Int): ItemStack {
+        val meta = item.itemMeta
+        if (meta != null && meta is Damageable) {
+            try {
+                meta.damage = durability
+                item.itemMeta = meta
+            } catch (_: Exception) {
+            }
+        } else {
+            try {
+                item.durability = durability.toShort()
+            } catch (_: Exception) {
+            }
+        }
+        return item
+    }
 
     /**
      * 比较两个物品是否相似
