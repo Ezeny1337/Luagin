@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  📑 <a href="#-overview">Overview</a> • <a href="#-documents">Documents</a> • <a href="#-compatibility">Compatibility</a> • <a href="#%EF%B8%8F-support">Support</a> • <a href="#%EF%B8%8F-license">License</a>
+  📑 <a href="#-overview">Overview</a> • <a href="#-documents">Documents</a> • <a href="#%EF%B8%8F-configs">Configs</a> • <a href="#-web-panel">Web Panel</a> • <a href="#-compatibility">Compatibility</a> • <a href="#%EF%B8%8F-support">Support</a> • <a href="#%EF%B8%8F-license">License</a>
 </p>
 
 <p align="center">
