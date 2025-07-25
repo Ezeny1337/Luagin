@@ -59,6 +59,21 @@ https://ezeny.gitbook.io/luagin-docs
     information, which means you need to search for relevant information about
     some classes and their methods in Bukkit's documentation.
 
+## ⚙️ Configs
+
+Configuration location - `plugins/Luagin/configs`
+
+Language config location - `plugins/Luagin/lang`
+
+## 🌀 Web Panel
+
+If you enable the web panel in the configuration file, access the panel through `localhost:9527`. Chinese and English are supported.
+
+The default username and password are "admin".
+
+<img width="1919" height="939" alt="panel1" src="https://github.com/user-attachments/assets/07779e39-679b-4017-a985-7374866fa2db" />
+<img width="1919" height="934" alt="panel2" src="https://github.com/user-attachments/assets/018addf4-d407-4e2a-ab2d-f1584ec05b7b" />
+
 ## 🧪 Compatibility
 
 - The supported game versions depend on the **server-side API**.
