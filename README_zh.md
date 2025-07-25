@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  📑 <a href="#-概述">概述</a> • <a href="#-文档">文档</a> • <a href="#-兼容性">兼容性</a> • <a href="#%EF%B8%8F-支持">支持</a> • <a href="#%EF%B8%8F-许可">许可</a>
+  📑 <a href="#-概述">概述</a> • <a href="#-文档">文档</a> • <a href="#%EF%B8%8F-配置">配置</a>• <a href="#-web-面板">Web 面板</a> • <a href="#-兼容性">兼容性</a> • <a href="#%EF%B8%8F-支持">支持</a> • <a href="#%EF%B8%8F-许可">许可</a>
 </p>
 
 <p align="center">
@@ -52,6 +52,21 @@ https://ezeny.gitbook.io/luagin-docs
 
     由于没有足够的时间，目前文档只包含必要的信息，这意味着你需要在 Bukkit 文档中查找
     原始的类及其方法的相关信息
+
+## ⚙️ 配置
+
+配置位于 - `plugins/Luagin/configs`
+
+语言配置位于 - `plugins/Luagin/lang`
+
+## 🌀 Web 面板
+
+如果你在配置文件里启用了 web 面板, 可以通过 `localhost:9527` 访问它， 目前支持中文和英文
+
+默认用户名和密码是"admin"
+
+<img width="1919" height="939" alt="panel1" src="https://github.com/user-attachments/assets/07779e39-679b-4017-a985-7374866fa2db" />
+<img width="1919" height="934" alt="panel2" src="https://github.com/user-attachments/assets/018addf4-d407-4e2a-ab2d-f1584ec05b7b" />
 
 ## 🧪 兼容性
 
