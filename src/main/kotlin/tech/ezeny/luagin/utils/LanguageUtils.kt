@@ -43,6 +43,9 @@ object LanguageUtils {
             enConfig.set("log.info.loading_lua_succeeded", "Lua loaded successfully: {0}")
             enConfig.set("log.info.mysql_connected", "Connected to MySQL")
             enConfig.set("log.info.registered_lua_api","Registered API for {0}")
+            enConfig.set("log.info.mysql_disabled","MySQL disabled")
+            enConfig.set("log.info.webpanel_started","Web panel started, port: {0}")
+            enConfig.set("log.info.webpanel_disabled","Web panel disabled")
 
             // 警告级别消息
             enConfig.set("log.warning.event_not_found", "Event class {0}.{1} not found")
@@ -91,6 +94,7 @@ object LanguageUtils {
             enConfig.set("log.warning.async_perf_update_failed","Failed to update asynchronous performance data: {0}")
             enConfig.set("log.warning.get_per_cpu_failed","Failed to get the usage percent of each CPU core: {0}")
             enConfig.set("log.warning.format_datetime_failed","Failed to format datetime: {0}")
+            enConfig.set("log.warning.webpanel_start_failed","Failed to start web panel: {0}")
 
             // 严重级别消息
             enConfig.set("log.severe.copy_shared_api_failed", "Shared API: {0} is nil in the main environment")
@@ -152,6 +156,8 @@ object LanguageUtils {
             zhConfig.set("log.info.mysql_connected", "已连接到 MySQL")
             zhConfig.set("log.info.registered_lua_api","已为 {0} 注册 API")
             zhConfig.set("log.info.mysql_disabled","MySQL 已禁用")
+            zhConfig.set("log.info.webpanel_started","Web 面板已启动, 端口: {0}")
+            zhConfig.set("log.info.webpanel_disabled","Web 面板已禁用")
 
             zhConfig.set("log.warning.event_not_found", "找不到事件类 {0}.{1}")
             zhConfig.set("log.warning.register_event_handler_failed", "注册事件处理器失败: {0}")
@@ -196,6 +202,7 @@ object LanguageUtils {
             zhConfig.set("log.warning.async_perf_update_failed","异步更新性能数据失败: {0}")
             zhConfig.set("log.warning.get_per_cpu_failed","获取每个 CPU 核心的使用率失败: {0}")
             zhConfig.set("log.warning.format_datetime_failed","格式化日期时间失败: {0}")
+            zhConfig.set("log.warning.webpanel_start_failed","Web 面板启动失败: {0}")
 
             // 严重级别消息
             zhConfig.set("log.severe.copy_shared_api_failed", "共享 API: {0} 在主环境为 nil")

@@ -1,0 +1,217 @@
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-image: url('../../assets/background.webp');
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.login-card {
+    width: 400px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0px 25px 8px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 2;
+}
+
+.login-card .ant-card-head {
+    border-bottom: none;
+}
+
+.login-card .ant-card-body {
+    padding: 24px;
+}
+
+.login-title {
+    text-align: center;
+    color: white;
+    font-size: 32px;
+    font-weight: bold;
+    margin-bottom: 24px;
+}
+
+.login-form {
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+.login-form .ant-input-affix-wrapper {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.18) !important;
+    transition: box-shadow 0.3s, border 0.3s;
+}
+
+.login-form .ant-input {
+    background: transparent !important;
+    color: white !important;
+}
+
+.login-form .ant-input::placeholder {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.login-form .ant-input-prefix .anticon {
+    color: white !important;
+}
+
+.login-form-button {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    height: 40px;
+    color: white !important;
+    background: linear-gradient(to right, rgba(255, 255, 255, 0.7), transparent, rgba(255, 255, 255, 0.7)) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.18) !important;
+    transition: color 0.4s, box-shadow 0.3s !important;
+}
+
+.login-form-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.7), transparent) !important;
+    opacity: 0;
+    transition: opacity 0.4s ease !important;
+}
+
+.login-form-button>span {
+    position: relative;
+}
+
+.login-form-button:hover {
+    color: #1890ff !important;
+}
+
+.login-form-button:hover::before {
+    opacity: 1;
+}
+
+.login-form-forgot {
+    float: right;
+}
+
+.ant-col-rtl .login-form-forgot {
+    float: left;
+}
+
+.login-form-button {
+    width: 100%;
+}
+
+.floating-label-input {
+    position: relative;
+    margin-bottom: 12px;
+    padding-top: 18px;
+}
+
+.login-form .login-btn-item {
+    margin-top: 36px;
+}
+
+.floating-label {
+    position: absolute;
+    left: 36px;
+    top: 65%;
+    transform: translateY(-50%) scale(1);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 15px;
+    pointer-events: none;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
+    z-index: 2;
+}
+
+.floating-label-active {
+    top: -8px;
+    left: 4px;
+    font-size: 13px;
+    color: #fff;
+    transform: scale(0.94);
+}
+
+.input-affix-wrapper-custom {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.18);
+    padding: 0 10px;
+    height: 40px;
+    position: relative;
+}
+
+.input-affix-wrapper-custom .site-form-item-icon {
+    color: #fff;
+    font-size: 17px;
+    margin-right: 6px;
+    z-index: 3;
+}
+
+.input-affix-wrapper-custom .ant-input {
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    color: #fff !important;
+    font-size: 15px;
+    flex: 1;
+    box-shadow: none !important;
+    z-index: 3;
+    height: 38px;
+    line-height: 38px;
+    padding: 0;
+}
+
+.input-affix-wrapper-custom .ant-input::placeholder {
+    color: transparent !important;
+}
+
+.floating-squares {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    top: 0;
+    left: 0;
+}
+.floating-squares.under {
+    z-index: 1;
+}
+.floating-squares.above {
+    z-index: 3;
+}
+
+.floating-square {
+    position: absolute;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0px 0px 24px 2px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    transition: box-shadow 0.3s;
+    animation: floatUpDown 4s ease-in-out infinite alternate;
+}
+
+@keyframes floatUpDown {
+    0% {
+        transform: translateY(0px);
+    }
+
+    100% {
+        transform: translateY(-30px);
+    }
+}

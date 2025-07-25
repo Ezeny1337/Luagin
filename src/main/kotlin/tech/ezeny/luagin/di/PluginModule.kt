@@ -15,19 +15,21 @@ import tech.ezeny.luagin.lua.ScriptManager
 import tech.ezeny.luagin.network.NetworkManager
 import tech.ezeny.luagin.permissions.PermissionManager
 import tech.ezeny.luagin.performance.PerformanceMonitor
+import tech.ezeny.luagin.web.WebPanelManager
 
 val pluginModules = module {
     single { get<Luagin>() } // 提供 Luagin 实例
 
     single { YamlManager(get()) }
     single { I18n(get()) }
+    single { PerformanceMonitor(get()) }
+    single { WebPanelManager(get(), get()) }
     single { NetworkManager(get()) }
     single { PermissionManager(get(), get()) }
     single { CommandManager(get(), get()) }
     single { MySQLManager(get(), get()) }
     single { EventManager(get()) }
     single { ItemManager() }
-    single { PerformanceMonitor(get()) }
     single { APIRegister(get()) }
     single { LuaEnvManager(get()) }
     single { ScriptManager(get(), get(), get()) }
@@ -36,13 +38,14 @@ val pluginModules = module {
 fun getKoinModules() {
     getKoin().get<YamlManager>()
     getKoin().get<I18n>()
+    getKoin().get<PerformanceMonitor>()
+    getKoin().get<WebPanelManager>()
     getKoin().get<NetworkManager>()
     getKoin().get<PermissionManager>()
     getKoin().get<CommandManager>()
     getKoin().get<MySQLManager>()
     getKoin().get<EventManager>()
     getKoin().get<ItemManager>()
-    getKoin().get<PerformanceMonitor>()
     getKoin().get<APIRegister>()
     getKoin().get<LuaEnvManager>()
     getKoin().get<ScriptManager>()

@@ -12,6 +12,7 @@ import tech.ezeny.luagin.di.pluginModules
 import tech.ezeny.luagin.gui.InventoryGuiListener
 import tech.ezeny.luagin.permissions.PermissionManager
 import tech.ezeny.luagin.utils.PLog
+import tech.ezeny.luagin.web.WebPanelManager
 
 class Luagin : JavaPlugin() {
 
@@ -43,6 +44,9 @@ class Luagin : JavaPlugin() {
 
         val mysqlManager = getKoin().get<MySQLManager>()
         mysqlManager.close()
+
+        val webPanelManager = getKoin().get<WebPanelManager>()
+        webPanelManager.stopWebServer()
 
         stopKoin()
 

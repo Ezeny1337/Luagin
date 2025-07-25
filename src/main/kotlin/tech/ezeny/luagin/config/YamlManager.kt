@@ -15,6 +15,12 @@ class YamlManager(plugin: Luagin) {
     init {
         // 初始化 FileUtils
         FileUtils.initialize(plugin)
+
+        // 插件配置目录
+        val configsFolder = FileUtils.getFile("configs")
+        if (!configsFolder.exists()) {
+            FileUtils.createDirectory("configs")
+        }
         
         // 插件语言目录
         val langFolder = FileUtils.getFile("lang")

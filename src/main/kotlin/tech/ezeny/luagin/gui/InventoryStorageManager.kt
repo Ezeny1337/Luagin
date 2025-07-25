@@ -6,7 +6,7 @@ import com.google.gson.reflect.TypeToken
 import org.bukkit.inventory.ItemStack
 import org.bukkit.util.io.BukkitObjectInputStream
 import org.bukkit.util.io.BukkitObjectOutputStream
-import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder
+import java.util.Base64
 import tech.ezeny.luagin.utils.PLog
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -88,7 +88,7 @@ object InventoryStorageManager {
         return try {
             val outputStream = ByteArrayOutputStream()
             BukkitObjectOutputStream(outputStream).use { it.writeObject(item) }
-            Base64Coder.encodeLines(outputStream.toByteArray())
+            Base64.getEncoder().encodeToString(outputStream.toByteArray())
         } catch (e: Exception) {
             PLog.warning("log.warning.serialize_item_failed", e.message ?: "Unknown error")
             null
@@ -100,7 +100,7 @@ object InventoryStorageManager {
      */
     private fun base64ToItem(encoded: String): ItemStack? {
         return try {
-            val data = Base64Coder.decodeLines(encoded)
+            val data = Base64.getDecoder().decode(encoded)
             val inputStream = ByteArrayInputStream(data)
             BukkitObjectInputStream(inputStream).use { it.readObject() as ItemStack }
         } catch (e: Exception) {

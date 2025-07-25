@@ -14,6 +14,7 @@ import oshi.software.os.FileSystem
 import oshi.software.os.OperatingSystem
 
 class PerformanceMonitor(private val plugin: Luagin) {
+    private val systemInfo = SystemInfo()
 
     // 性能数据缓存
     private val performanceCache = ConcurrentHashMap<String, Any>()
@@ -34,6 +35,21 @@ class PerformanceMonitor(private val plugin: Luagin) {
     private var previousCpuTicks: LongArray = LongArray(0)
     private var previousCpuTime: Long = 0
     private var previousProcessorTicks: Array<LongArray> = emptyArray()
+
+    // 网络速率缓存
+    private var previousNetworkStats: Map<String, NetworkStat> = emptyMap()
+    private var previousNetworkTime: Long = 0
+
+    // 磁盘 IO 速率缓存
+    private var previousDiskStats: Map<String, Pair<Long, Long>> = emptyMap() // name -> (readBytes, writeBytes)
+    private var previousDiskTime: Long = 0
+
+    data class NetworkStat(
+        val bytesSent: Long,
+        val bytesRecv: Long,
+        val packetsSent: Long,
+        val packetsRecv: Long
+    )
 
     init {
         startPeriodicUpdate()
@@ -78,6 +94,9 @@ class PerformanceMonitor(private val plugin: Luagin) {
     private fun updateSystemData() {
         val currentTime = System.currentTimeMillis()
         lastUpdateTime.set(currentTime)
+
+        // 刷新所有磁盘属性
+        systemInfo.hardware.diskStores.forEach { it.updateAttributes() }
 
         performanceCache["java"] = getJavaPerformance()
         performanceCache["system"] = getSystemPerformance()
@@ -155,8 +174,8 @@ class PerformanceMonitor(private val plugin: Luagin) {
 
         // 线程信息
         val threadCount = threadBean.threadCount
-        val peakThreadCount = threadBean.peakThreadCount
         val daemonThreadCount = threadBean.daemonThreadCount
+        val peakThreadCount = threadBean.peakThreadCount
 
         // JVM 信息
         val jvmInfo = mapOf(
@@ -169,24 +188,24 @@ class PerformanceMonitor(private val plugin: Luagin) {
                 "heap" to mapOf(
                     "used" to heapMemoryUsage.used,
                     "committed" to heapMemoryUsage.committed,
+                    "free" to (heapMemoryUsage.max - heapMemoryUsage.used),
                     "max" to heapMemoryUsage.max,
-                    "free" to (heapMemoryUsage.max - heapMemoryUsage.used)
                 ),
                 "non_heap" to mapOf(
                     "used" to nonHeapMemoryUsage.used,
                     "committed" to nonHeapMemoryUsage.committed,
-                    "max" to nonHeapMemoryUsage.max
-                ),
+                    ),
                 "total" to mapOf(
                     "used" to (heapMemoryUsage.used + nonHeapMemoryUsage.used),
+                    "committed" to (heapMemoryUsage.committed + nonHeapMemoryUsage.committed),
                     "free" to (runtime.maxMemory() - heapMemoryUsage.used - nonHeapMemoryUsage.used),
                     "max" to runtime.maxMemory()
                 )
             ),
             "threads" to mapOf(
                 "count" to threadCount,
+                "daemon_count" to daemonThreadCount,
                 "peak_count" to peakThreadCount,
-                "daemon_count" to daemonThreadCount
             ),
             "jvm" to jvmInfo,
             "uptime" to ManagementFactory.getRuntimeMXBean().uptime,
@@ -198,7 +217,6 @@ class PerformanceMonitor(private val plugin: Luagin) {
      * 获取系统性能数据
      */
     private fun getSystemPerformance(): Map<String, Any> {
-        val systemInfo = SystemInfo()
         val hardware = systemInfo.hardware
         val operatingSystem = systemInfo.operatingSystem
 
@@ -239,10 +257,8 @@ class PerformanceMonitor(private val plugin: Luagin) {
 
         return mapOf(
             "name" to processor.processorIdentifier.name,
-            "physical_package_count" to processor.physicalPackageCount,
             "physical_cpu_count" to processor.physicalProcessorCount,
             "logical_cpu_count" to processor.logicalProcessorCount,
-            "cores_per_socket" to (if (processor.physicalPackageCount > 0) processor.physicalProcessorCount / processor.physicalPackageCount else 0),
             "max_frequency" to processor.maxFreq,
             "current_frequency" to processor.currentFreq[0], // 取第一个核心的频率作为当前频率
             "context_switches" to processor.contextSwitches,
@@ -260,13 +276,12 @@ class PerformanceMonitor(private val plugin: Luagin) {
     private fun getMemoryInfo(memory: GlobalMemory): Map<String, Any> {
         // 截断为两位小数（在性能敏感场景下优于 format）
         val memoryUsage = (memory.total - memory.available) * 100.0 / memory.total
-        val truncatedUsage = (memoryUsage.coerceIn(0.0, 100.0) * 100).toInt() / 100.0
+        val truncatedUsage = truncate2(memoryUsage.coerceIn(0.0, 100.0))
 
         return mapOf(
             "total" to memory.total,
             "available" to memory.available,
             "used" to (memory.total - memory.available),
-            "free" to memory.available,
             "usage_percent" to truncatedUsage,
             "virtual_memory" to mapOf(
                 "total" to memory.virtualMemory.swapTotal,
@@ -286,26 +301,49 @@ class PerformanceMonitor(private val plugin: Luagin) {
         val usableSpace = fileStores.sumOf { it.usableSpace }
         val usedSpace = totalSpace - usableSpace
 
+        val currentTime = System.currentTimeMillis()
+        val interval = if (previousDiskTime == 0L) 1000L else (currentTime - previousDiskTime).coerceAtLeast(1L)
+
+        val diskStores = systemInfo.hardware.diskStores
+        val currentDiskStats = diskStores.associate { disk ->
+            disk.name to (disk.readBytes to disk.writeBytes)
+        }
+
         val diskDetails = fileStores.map { store ->
+            // 用分区 mountPoint 匹配物理磁盘的 partitionList
+            val disk = diskStores.find { d ->
+                d.partitions.any { p -> p.mountPoint.equals(store.mount, ignoreCase = true) }
+            }
+            val prev = if (disk != null) previousDiskStats[disk.name] else null
+            val readPerSec =
+                if (disk != null && prev != null) (disk.readBytes - prev.first) * 1000.0 / interval else 0.0
+            val writePerSec =
+                if (disk != null && prev != null) (disk.writeBytes - prev.second) * 1000.0 / interval else 0.0
             mapOf(
                 "name" to store.name,
                 "mount_point" to store.mount,
-                "type" to store.type,
                 "total" to store.totalSpace,
                 "used" to (store.totalSpace - store.usableSpace),
                 "free" to store.usableSpace,
-                "usage_percent" to (((store.totalSpace - store.usableSpace) * 100.0 / store.totalSpace).coerceIn(
-                    0.0,
-                    100.0
-                ) * 100).toInt() / 100.0
+                "usage_percent" to truncate2(
+                    ((store.totalSpace - store.usableSpace) * 100.0 / store.totalSpace).coerceIn(
+                        0.0,
+                        100.0
+                    )
+                ),
+                "read_bytes_per_sec" to readPerSec,
+                "write_bytes_per_sec" to writePerSec
             )
         }
+
+        previousDiskStats = currentDiskStats
+        previousDiskTime = currentTime
 
         return mapOf(
             "total_space" to totalSpace,
             "used_space" to usedSpace,
             "free_space" to usableSpace,
-            "usage_percent" to (usedSpace.toDouble() / totalSpace.toDouble() * 100.0),
+            "usage_percent" to truncate2(usedSpace.toDouble() / totalSpace.toDouble() * 100.0),
             "stores" to diskDetails
         )
     }
@@ -314,28 +352,57 @@ class PerformanceMonitor(private val plugin: Luagin) {
      * 获取网络信息
      */
     private fun getNetworkInfo(networkIFs: List<NetworkIF>): Map<String, Any> {
+        val currentTime = System.currentTimeMillis()
+        val interval = if (previousNetworkTime == 0L) 1000L else (currentTime - previousNetworkTime).coerceAtLeast(1L)
+
+        val currentStats = networkIFs.associateBy({ it.name }, {
+            NetworkStat(it.bytesSent, it.bytesRecv, it.packetsSent, it.packetsRecv)
+        })
+
+        // 统计所有网卡的累计数据
         val totalBytesSent = networkIFs.sumOf { it.bytesSent }
         val totalBytesRecv = networkIFs.sumOf { it.bytesRecv }
         val totalPacketsSent = networkIFs.sumOf { it.packetsSent }
         val totalPacketsRecv = networkIFs.sumOf { it.packetsRecv }
 
-        val networkDetails = networkIFs.map { network ->
-            mapOf(
-                "bytes_sent" to network.bytesSent,
-                "bytes_recv" to network.bytesRecv,
-                "packets_sent" to network.packetsSent,
-                "packets_recv" to network.packetsRecv,
-                "speed" to network.speed,
-                "mtu" to network.mtu
-            )
+        // 统计所有网卡的速率
+        var prevTotalBytesSent = 0L
+        var prevTotalBytesRecv = 0L
+        var prevTotalPacketsSent = 0L
+        var prevTotalPacketsRecv = 0L
+        if (previousNetworkStats.isNotEmpty()) {
+            prevTotalBytesSent = previousNetworkStats.values.sumOf { it.bytesSent }
+            prevTotalBytesRecv = previousNetworkStats.values.sumOf { it.bytesRecv }
+            prevTotalPacketsSent = previousNetworkStats.values.sumOf { it.packetsSent }
+            prevTotalPacketsRecv = previousNetworkStats.values.sumOf { it.packetsRecv }
         }
+        val bytesSentPerSec = ((totalBytesSent - prevTotalBytesSent) * 1000.0 / interval).toLong()
+        val bytesRecvPerSec = ((totalBytesRecv - prevTotalBytesRecv) * 1000.0 / interval).toLong()
+        val packetsSentPerSec = ((totalPacketsSent - prevTotalPacketsSent) * 1000.0 / interval).toLong()
+        val packetsRecvPerSec = ((totalPacketsRecv - prevTotalPacketsRecv) * 1000.0 / interval).toLong()
+
+        // Socket 连接数统计（所有TCP连接数）
+        val systemInfo = SystemInfo()
+        val os = systemInfo.operatingSystem
+        val ipStats = os.internetProtocolStats
+        val tcpv4Stats = ipStats.tcPv4Stats
+        val tcpv6Stats = ipStats.tcPv6Stats
+        val socketConnectionCount = tcpv4Stats.connectionsEstablished + tcpv6Stats.connectionsEstablished
+
+        // 更新缓存
+        previousNetworkStats = currentStats
+        previousNetworkTime = currentTime
 
         return mapOf(
             "total_bytes_sent" to totalBytesSent,
             "total_bytes_recv" to totalBytesRecv,
             "total_packets_sent" to totalPacketsSent,
             "total_packets_recv" to totalPacketsRecv,
-            "interfaces" to networkDetails
+            "bytes_sent_per_sec" to bytesSentPerSec,
+            "bytes_recv_per_sec" to bytesRecvPerSec,
+            "packets_sent_per_sec" to packetsSentPerSec,
+            "packets_recv_per_sec" to packetsRecvPerSec,
+            "socket_connection_count" to socketConnectionCount
         )
     }
 
@@ -343,7 +410,15 @@ class PerformanceMonitor(private val plugin: Luagin) {
      * 获取操作系统信息
      */
     private fun getOsInfo(operatingSystem: OperatingSystem): Map<String, Any> {
+        val versionInfo = operatingSystem.versionInfo
+
+        val osType = operatingSystem.family
+        val bitness = operatingSystem.bitness
+
+        val detailedVersion = "$osType $versionInfo ${bitness}Bit"
+
         return mapOf(
+            "os_version" to detailedVersion,
             "process_count" to operatingSystem.processCount,
             "thread_count" to operatingSystem.threadCount,
             "uptime" to operatingSystem.systemUptime
@@ -355,12 +430,12 @@ class PerformanceMonitor(private val plugin: Luagin) {
      */
     fun getAllPerformanceData(): Map<String, Any> {
         val currentTime = System.currentTimeMillis()
-        
+
         // 检查并更新服务器数据
         if (currentTime - lastServerUpdateTime.get() > serverCacheExpiryTime) {
             updateServerData()
         }
-        
+
         // 检查并更新系统数据
         if (currentTime - lastUpdateTime.get() > cacheExpiryTime) {
             updateSystemData()
@@ -383,7 +458,7 @@ class PerformanceMonitor(private val plugin: Luagin) {
     @Suppress("UNCHECKED_CAST")
     fun getPerformanceData(type: String): Map<String, Any>? {
         val currentTime = System.currentTimeMillis()
-        
+
         when (type) {
             "server" -> {
                 if (currentTime - lastServerUpdateTime.get() > serverCacheExpiryTime) {
@@ -394,6 +469,7 @@ class PerformanceMonitor(private val plugin: Luagin) {
                     data as Map<String, Any>
                 } else null
             }
+
             "java", "system" -> {
                 if (currentTime - lastUpdateTime.get() > cacheExpiryTime) {
                     updateSystemData()
@@ -403,6 +479,7 @@ class PerformanceMonitor(private val plugin: Luagin) {
                     data as Map<String, Any>
                 } else null
             }
+
             else -> return null
         }
     }
@@ -420,6 +497,10 @@ class PerformanceMonitor(private val plugin: Luagin) {
         previousCpuTicks = LongArray(0)
         previousCpuTime = 0
         previousProcessorTicks = emptyArray()
+        previousNetworkStats = emptyMap()
+        previousNetworkTime = 0
+        previousDiskStats = emptyMap()
+        previousDiskTime = 0
     }
 
     /**
@@ -427,12 +508,12 @@ class PerformanceMonitor(private val plugin: Luagin) {
      */
     private fun calculateCpuUsage(processor: CentralProcessor): Double {
         val currentTime = System.currentTimeMillis()
-        
+
         // 检查缓存是否过期
         if (currentTime - lastCpuUpdateTime.get() < cpuCacheExpiryTime) {
             return cpuUsageCache["overall"] ?: 0.0
         }
-        
+
         val currentTicks = processor.systemCpuLoadTicks
 
         if (previousCpuTicks.isEmpty()) {
@@ -463,7 +544,7 @@ class PerformanceMonitor(private val plugin: Luagin) {
         previousCpuTime = currentTime
 
         // 更新 CPU 使用率缓存
-        val finalUsage = (cpuUsage.coerceIn(0.0, 100.0) * 100).toInt() / 100.0
+        val finalUsage = truncate2(cpuUsage.coerceIn(0.0, 100.0))
         cpuUsageCache["overall"] = finalUsage
         lastCpuUpdateTime.set(currentTime)
 
@@ -496,7 +577,7 @@ class PerformanceMonitor(private val plugin: Luagin) {
                 } else {
                     0.0
                 }
-                perCoreUsage[i] = (usage.coerceIn(0.0, 100.0) * 100).toInt() / 100.0
+                perCoreUsage[i] = truncate2(usage.coerceIn(0.0, 100.0))
             }
 
             // 更新缓存数据
@@ -533,9 +614,24 @@ class PerformanceMonitor(private val plugin: Luagin) {
 
             // 返回3个值（1分钟、5分钟、15分钟）
             when {
-                recentTps.size >= 3 -> recentTps.take(3).toDoubleArray()
-                recentTps.size == 2 -> doubleArrayOf(recentTps[0], recentTps[1], recentTps[1])
-                recentTps.size == 1 -> doubleArrayOf(recentTps[0], recentTps[0], recentTps[0])
+                recentTps.size >= 3 -> doubleArrayOf(
+                    truncate2(recentTps[0]),
+                    truncate2(recentTps[1]),
+                    truncate2(recentTps[2])
+                )
+
+                recentTps.size == 2 -> doubleArrayOf(
+                    truncate2(recentTps[0]),
+                    truncate2(recentTps[1]),
+                    truncate2(recentTps[1])
+                )
+
+                recentTps.size == 1 -> doubleArrayOf(
+                    truncate2(recentTps[0]),
+                    truncate2(recentTps[0]),
+                    truncate2(recentTps[0])
+                )
+
                 else -> doubleArrayOf(20.0, 20.0, 20.0) // 默认值
             }
         } catch (e: Exception) {
@@ -543,4 +639,6 @@ class PerformanceMonitor(private val plugin: Luagin) {
             doubleArrayOf(20.0, 20.0, 20.0)
         }
     }
+
+    private fun truncate2(value: Double): Double = (value * 100).toInt() / 100.0
 } 

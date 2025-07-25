@@ -20,7 +20,7 @@
 
 ## 📖 Overview
 
-**Luagin** is a plugin based on the **bukkit API** and **LuaJIT**. It allows developers to highly customize
+**Luagin** is a plugin based on the **Bukkit API** and **LuaJIT**. It allows developers to highly customize
 the server through Lua scripts in an extremely effective and efficient manner.
 
 ### 🚀 Features
@@ -34,6 +34,7 @@ the server through Lua scripts in an extremely effective and efficient manner.
 | Inter-script communication           | Be competent for large and complex plugin development, even more modular.                                                 |
 | Koin DI framework and modular design | High cohesion and low coupling. High readability and maintainability.                                                     |
 | Translation                          | Language configs in different countries or regions that can be contributed by the community.                              |
+| Web Panel                            | Modern Web panel can help you monitor server data and configure plugin intuitively and conveniently.                      |
 
 ### ❓ Why Lua/Luagin
 

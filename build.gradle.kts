@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "tech.ezeny"
-version = "2.4.1"
+version = "3.0.0-beta.1"
 
 repositories {
     mavenCentral()
@@ -30,11 +30,33 @@ dependencies {
     implementation("com.zaxxer:HikariCP:6.3.0")
     implementation("com.mysql:mysql-connector-j:9.3.0")
     implementation("com.github.oshi:oshi-core:6.8.2")
+    implementation("io.ktor:ktor-server-core-jvm:3.2.2")
+    implementation("io.ktor:ktor-server-netty-jvm:3.2.2")
+    implementation("io.ktor:ktor-server-auth-jvm:3.2.2")
+    implementation("io.ktor:ktor-server-auth-jwt-jvm:3.2.2")
+    implementation("io.ktor:ktor-server-content-negotiation-jvm:3.2.2")
+    implementation("io.ktor:ktor-serialization-jackson-jvm:3.2.2")
+    implementation("io.ktor:ktor-server-cors-jvm:3.2.2")
 }
 
 val targetJavaVersion = 21
 kotlin {
     jvmToolchain(targetJavaVersion)
+}
+
+// 自动拷贝前端 build 到 resources
+val copyWebpanelDist = tasks.register<Copy>("copyWebpanelDist") {
+    val targetDir = file("src/main/resources/webpanel/dist")
+
+    doFirst {
+        if (targetDir.exists()) {
+            println("Deleting existing webpanel dist: $targetDir")
+            targetDir.deleteRecursively()
+        }
+    }
+
+    from("webpanel/dist")
+    into(targetDir)
 }
 
 tasks {
@@ -43,6 +65,7 @@ tasks {
     }
 
     processResources {
+        dependsOn(copyWebpanelDist)
         val props = mapOf("version" to version)
         inputs.properties(props)
         filteringCharset = "UTF-8"
@@ -58,10 +81,11 @@ tasks {
         exclude(
             "META-INF/AL2.0",
             "META-INF/LGPL2.1",
-            "META-INF/LICENSE",
-            "META-INF/NOTICE",
+            "META-INF/LICENSE*",
+            "META-INF/NOTICE*",
             "META-INF/INDEX.LIST",
-            "META-INF/*.kotlin_module"
+            "META-INF/*.kotlin_module",
+            "META-INF/io.netty.versions.properties"
         )
     }
 
