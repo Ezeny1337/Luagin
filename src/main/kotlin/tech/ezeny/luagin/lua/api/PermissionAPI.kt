@@ -164,6 +164,19 @@ object PermissionAPI : LuaAPIProvider, KoinComponent {
         }
         lua.setField(-2, "add_group")
 
+        // remove_group(group_name: string): boolean - 删除权限组
+        lua.push { luaState ->
+            if (luaState.top < 1) {
+                luaState.push(false)
+                return@push 1
+            }
+
+            val groupName = luaState.toString(1) ?: ""
+            luaState.push(permissionManager.removeGroup(groupName))
+            return@push 1
+        }
+        lua.setField(-2, "remove_group")
+
         // get_group_info(group_name: string): table - 获取权限组信息
         lua.push { luaState ->
             if (luaState.top < 1) {

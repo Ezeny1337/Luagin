@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Layout, Menu, Select } from 'antd';
 import { PieChartOutlined, SettingOutlined } from '@ant-design/icons';
 import Performance from './components/Panel/Performance';
+import Config from './components/Config';
 import Login from './components/Login';
 import logo from './assets/logo.webp';
 import './App.css';
@@ -11,6 +12,7 @@ const { Sider, Content } = Layout;
 
 const App: React.FC = () => {
   const [logged, setLogged] = useState(false);
+  const [currentMenu, setCurrentMenu] = useState('performance');
   const { t, i18n } = useTranslation();
   const bgColor = '#f0f2f5';
   const siderBg = '#fff';
@@ -57,8 +59,9 @@ const App: React.FC = () => {
           <Menu
             theme='light'
             mode="inline"
-            defaultSelectedKeys={['performance']}
+            selectedKeys={[currentMenu]}
             style={{ borderRight: 0, background: siderBg }}
+            onSelect={({ key }) => setCurrentMenu(key)}
             items={[
               {
                 key: 'performance',
@@ -68,8 +71,7 @@ const App: React.FC = () => {
               {
                 key: 'config',
                 icon: <SettingOutlined />,
-                label: t('config'),
-                disabled: true,
+                label: t('config.title'),
               },
             ]}
           />
@@ -89,7 +91,8 @@ const App: React.FC = () => {
       </Sider>
       <Layout style={{ marginLeft: 220 }}>
         <Content style={{ margin: 0, padding: 24, minHeight: '100vh', background: bgColor }}>
-          <Performance />
+          {currentMenu === 'performance' && <Performance />}
+          {currentMenu === 'config' && <Config />}
         </Content>
       </Layout>
     </>

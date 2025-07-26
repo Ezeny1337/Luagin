@@ -23,13 +23,13 @@ val pluginModules = module {
     single { YamlManager(get()) }
     single { I18n(get()) }
     single { PerformanceMonitor(get()) }
-    single { WebPanelManager(get(), get()) }
     single { NetworkManager(get()) }
     single { PermissionManager(get(), get()) }
     single { CommandManager(get(), get()) }
     single { MySQLManager(get(), get()) }
     single { EventManager(get()) }
     single { ItemManager() }
+    single { WebPanelManager(get(), get(), get()) }
     single { APIRegister(get()) }
     single { LuaEnvManager(get()) }
     single { ScriptManager(get(), get(), get()) }
@@ -39,13 +39,13 @@ fun getKoinModules() {
     getKoin().get<YamlManager>()
     getKoin().get<I18n>()
     getKoin().get<PerformanceMonitor>()
-    getKoin().get<WebPanelManager>()
     getKoin().get<NetworkManager>()
     getKoin().get<PermissionManager>()
     getKoin().get<CommandManager>()
     getKoin().get<MySQLManager>()
     getKoin().get<EventManager>()
     getKoin().get<ItemManager>()
+    getKoin().get<WebPanelManager>()
     getKoin().get<APIRegister>()
     getKoin().get<LuaEnvManager>()
     getKoin().get<ScriptManager>()

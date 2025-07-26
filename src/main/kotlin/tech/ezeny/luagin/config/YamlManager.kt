@@ -77,17 +77,54 @@ class YamlManager(plugin: Luagin) {
             "$relativePath.yml"
         } else {
             relativePath
-        }.replace("/", File.separator)
+        }
 
         val config = configCache[normalizedPath]
-        val file = configFiles[normalizedPath]
+        val file = configFiles[normalizedPath] ?: FileUtils.getFile(normalizedPath)
 
-        if (config == null || file == null) {
+        if (config == null) {
             return false
         }
 
         return try {
+            // 确保目录存在
+            file.parentFile?.mkdirs()
             config.save(file)
+            true
+        } catch (e: IOException) {
+            PLog.warning("config.save_failed", normalizedPath, e.message ?: "Unknown error")
+            false
+        }
+    }
+
+    /**
+     * 创建或更新配置文件
+     *
+     * @param relativePath 文件相对路径
+     * @param configData 配置数据
+     * @return 是否保存成功
+     */
+    fun createOrUpdateConfig(relativePath: String, configData: Map<String, Any>): Boolean {
+        val normalizedPath = if (!relativePath.endsWith(".yml")) {
+            "$relativePath.yml"
+        } else {
+            relativePath
+        }
+
+        val file = FileUtils.getFile(normalizedPath)
+        
+        return try {
+            // 确保目录存在
+            file.parentFile?.mkdirs()
+            
+            val config = YamlConfiguration()
+            configData.forEach { (key, value) ->
+                config.set(key, value)
+            }
+            
+            config.save(file)
+            configCache[normalizedPath] = config
+            configFiles[normalizedPath] = file
             true
         } catch (e: IOException) {
             PLog.warning("config.save_failed", normalizedPath, e.message ?: "Unknown error")

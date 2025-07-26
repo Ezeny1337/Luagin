@@ -320,6 +320,31 @@ class PermissionManager(private val plugin: Luagin, private val yamlManager: Yam
     }
 
     /**
+     * 删除权限组
+     */
+    fun removeGroup(groupName: String): Boolean {
+        val config = yamlManager.getConfig(configFile) ?: return false
+        
+        // 删除权限组
+        config.set("groups.$groupName", null)
+        
+        // 从所有玩家的权限组中移除该组
+        config.getConfigurationSection("players")?.getKeys(false)?.forEach { playerName ->
+            val groups = config.getStringList("players.$playerName.groups").toMutableList()
+            if (groups.remove(groupName)) {
+                config.set("players.$playerName.groups", groups)
+            }
+        }
+
+        // 更新所有玩家的权限
+        Bukkit.getOnlinePlayers().forEach { player ->
+            setupPlayerPermissions(player)
+        }
+
+        return yamlManager.saveConfig(configFile)
+    }
+
+    /**
      * 将玩家添加到权限组
      */
     fun addPlayerToGroup(player: Player, groupName: String): Boolean {
@@ -360,6 +385,54 @@ class PermissionManager(private val plugin: Luagin, private val yamlManager: Yam
             return yamlManager.saveConfig(configFile)
         }
         return true
+    }
+
+    /**
+     * 设置玩家权限配置 - 用于面板
+     */
+    fun setPlayerPermissions(playerName: String, groups: List<String>, permissions: List<String>): Boolean {
+        val config = yamlManager.getConfig(configFile) ?: return false
+
+        // 设置玩家权限组
+        if (groups.isNotEmpty()) {
+            config.set("players.$playerName.groups", groups)
+        } else {
+            config.set("players.$playerName.groups", null)
+        }
+
+        // 设置玩家权限
+        if (permissions.isNotEmpty()) {
+            config.set("players.$playerName.permissions", permissions)
+        } else {
+            config.set("players.$playerName.permissions", null)
+        }
+
+        // 注册权限
+        permissions.forEach { registerPermission(it) }
+
+        // 如果玩家在线，更新其权限
+        Bukkit.getPlayer(playerName)?.let { player ->
+            setupPlayerPermissions(player)
+        }
+
+        return yamlManager.saveConfig(configFile)
+    }
+
+    /**
+     * 删除玩家权限配置
+     */
+    fun removePlayer(playerName: String): Boolean {
+        val config = yamlManager.getConfig(configFile) ?: return false
+        
+        // 删除玩家配置
+        config.set("players.$playerName", null)
+        
+        // 如果玩家在线，移除其权限附件
+        Bukkit.getPlayer(playerName)?.let { player ->
+            removePlayerPermissions(player)
+        }
+        
+        return yamlManager.saveConfig(configFile)
     }
 
     /**
