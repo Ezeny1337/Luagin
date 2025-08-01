@@ -8,7 +8,6 @@ import org.koin.core.component.inject
 import party.iroiro.luajava.Lua
 import tech.ezeny.luagin.Luagin
 import tech.ezeny.luagin.items.ItemManager
-import tech.ezeny.luagin.utils.PLog
 
 object ItemsAPI : LuaAPIProvider, KoinComponent {
     private lateinit var plugin: Luagin

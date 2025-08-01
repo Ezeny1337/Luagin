@@ -1,6 +1,5 @@
 package tech.ezeny.luagin.lua.api
 
-import org.bukkit.Bukkit
 import party.iroiro.luajava.Lua
 import tech.ezeny.luagin.Luagin
 import tech.ezeny.luagin.lua.LuaValueFactory
@@ -134,7 +133,7 @@ object GlobalsAPI : LuaAPIProvider {
             when (key) {
                 "owtime" -> {
                     val newTime = luaState.toInteger(3)
-                    GlobalUtils.setOverworldTime(newTime.toLong())
+                    GlobalUtils.setOverworldTime(newTime)
                     return@push 0
                 }
                 "owweather" -> {

@@ -9,7 +9,7 @@ import tech.ezeny.luagin.commands.LuaginCommandExecutor
 import tech.ezeny.luagin.config.MySQLManager
 import tech.ezeny.luagin.di.getKoinModules
 import tech.ezeny.luagin.di.pluginModules
-import tech.ezeny.luagin.gui.InventoryGuiListener
+import tech.ezeny.luagin.gui.inventory.InventoryGuiListener
 import tech.ezeny.luagin.permissions.PermissionManager
 import tech.ezeny.luagin.utils.PLog
 import tech.ezeny.luagin.web.WebPanelManager

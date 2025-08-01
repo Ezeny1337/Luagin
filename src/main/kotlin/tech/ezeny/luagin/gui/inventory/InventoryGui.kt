@@ -1,30 +1,32 @@
-package tech.ezeny.luagin.gui
+package tech.ezeny.luagin.gui.inventory
 
 import org.bukkit.Bukkit
 import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.event.inventory.InventoryOpenEvent
-import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.scheduler.BukkitRunnable
 import tech.ezeny.luagin.Luagin
+import tech.ezeny.luagin.utils.ColorUtils
 import kotlin.collections.HashMap
-
+import kotlin.collections.iterator
 class InventoryGui(
     title: String,
     val size: Int,
     val guiId: String,
     val storable: Boolean
 ) {
-    val inventory: Inventory = Bukkit.createInventory(null, size, title)
+    private var colorizedTitle = ColorUtils.formatString(title)
+
+    val inventory = Bukkit.createInventory(null, size, colorizedTitle)
     private val itemCallbacks = HashMap<Int, (player: String, clickType: String) -> Unit>()
     private val openCallbacks = mutableListOf<(player: String) -> Unit>()
     private val closeCallbacks = mutableListOf<(player: String) -> Unit>()
-    
+
     // 跟踪脚本设置的物品槽位
     private val scriptSetSlots = mutableSetOf<Int>()
-    
+
     // 初始化所有槽位为 Pair(false, false)
     private val slotInteractive = HashMap<Int, Pair<Boolean, Boolean>>(size).apply {
         for (i in 0 until size) put(i, Pair(false, false))
@@ -33,7 +35,7 @@ class InventoryGui(
 
     fun open(playerName: String) {
         val player = Bukkit.getPlayer(playerName) ?: return
-        // 如果是可存储的GUI，先加载存储的物品
+        // 如果是可存储的GUI，加载用户存储的物品
         if (storable) {
             loadStoredItems(playerName)
         }
@@ -171,7 +173,7 @@ class InventoryGui(
     fun handleClose(event: InventoryCloseEvent) {
         if (event.inventory != inventory) return
         val player = event.player.name
-        
+
         // 处理物品返还逻辑
         if (!storable) {
             returnItemsToPlayer(player)
@@ -179,14 +181,14 @@ class InventoryGui(
             // 保存可存储的物品
             saveStoredItems(player)
         }
-        
+
         closeCallbacks.forEach { it(player) }
     }
 
     fun returnItemsToPlayer(playerName: String) {
         val player = Bukkit.getPlayer(playerName) ?: return
         val playerInventory = player.inventory
-        
+
         for (slot in 0 until inventory.size) {
             val item = inventory.getItem(slot)
             if (item != null && !scriptSetSlots.contains(slot)) {
@@ -203,11 +205,12 @@ class InventoryGui(
         }
     }
 
-    private fun saveStoredItems(playerName: String) {
+    fun saveStoredItems(playerName: String) {
         val items = mutableMapOf<Int, ItemStack>()
         for (slot in 0 until inventory.size) {
             val item = inventory.getItem(slot)
-            if (item != null) {
+            // 只保存非脚本设置的物品
+            if (item != null && !scriptSetSlots.contains(slot)) {
                 items[slot] = item
             }
         }
@@ -217,9 +220,16 @@ class InventoryGui(
     fun loadStoredItems(playerName: String) {
         val items = InventoryStorageManager.loadItems(guiId, playerName)
         for ((slot, item) in items) {
-            if (slot in 0 until inventory.size) {
+            // 只在非脚本设置的槽位加载用户物品
+            if (slot in 0 until inventory.size && !scriptSetSlots.contains(slot)) {
                 inventory.setItem(slot, item)
             }
         }
     }
-} 
+
+    fun getViewers(): List<String> {
+        return Bukkit.getOnlinePlayers()
+            .filter { it.openInventory.topInventory == inventory }
+            .map { it.name }
+    }
+}

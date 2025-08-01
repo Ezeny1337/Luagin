@@ -28,7 +28,7 @@ object GlobalUtils {
      */
     fun getOverworldTime(): Long {
         return try {
-            val overworld = Bukkit.getWorlds().find { it.environment == org.bukkit.World.Environment.NORMAL }
+            val overworld = Bukkit.getWorlds().find { it.environment == World.Environment.NORMAL }
             overworld?.time ?: 0L
         } catch (e: Exception) {
             PLog.warning("log.warning.get_overworld_time_failed", e.message ?: "Unknown error")

@@ -1,4 +1,4 @@
-package tech.ezeny.luagin.gui
+package tech.ezeny.luagin.gui.inventory
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -13,6 +13,7 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileReader
 import java.io.FileWriter
+import kotlin.collections.iterator
 
 object InventoryStorageManager {
     private val gson: Gson = GsonBuilder().create()

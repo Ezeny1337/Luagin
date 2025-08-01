@@ -1,4 +1,4 @@
-package tech.ezeny.luagin.gui
+package tech.ezeny.luagin.gui.inventory
 
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener

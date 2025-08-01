@@ -2,4 +2,5 @@
 build
 run
 .kotlin
-src/main/resources/webpanel/dist
+src/main/resources/webpanel
+.idea

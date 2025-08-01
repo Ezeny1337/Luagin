@@ -6,7 +6,7 @@ import net.md_5.bungee.api.chat.TextComponent
 object ColorUtils {
 
     // Hex 颜色的正则表达式模式，匹配 \a 后跟 6 位十六进制字符
-    val HEX_PATTERN = "\\\\a([0-9a-fA-F]{6})".toRegex()
+    val HEX_PATTERN = "\u0007([0-9a-fA-F]{6})".toRegex()
 
     /**
      * 将带有颜色代码的字符串转换为 TextComponent
@@ -204,6 +204,107 @@ object ColorUtils {
         return text.replace(HEX_PATTERN) { matchResult ->
             val hexColor = matchResult.groupValues[1]
             "§x§${hexColor[0]}§${hexColor[1]}§${hexColor[2]}§${hexColor[3]}§${hexColor[4]}§${hexColor[5]}"
+        }
+    }
+
+    /**
+     * 创建双色渐变文本
+     * 
+     * @param text 渐变文本
+     * @param startColor 起始颜色 Hex
+     * @param endColor 结束颜色 Hex
+     * @return 渐变后的文本
+     */
+    fun createGradient(text: String, startColor: String, endColor: String): String {
+        if (text.isEmpty()) return text
+        
+        try {
+            val start = ChatColor.of(startColor)
+            val end = ChatColor.of(endColor)
+            
+            val result = StringBuilder()
+            val length = text.length
+            
+            for (i in text.indices) {
+                val ratio = i.toDouble() / (length - 1)
+                val interpolatedColor = interpolateColor(start, end, ratio)
+                result.append(interpolatedColor).append(text[i])
+            }
+            
+            return result.toString()
+        } catch (e: Exception) {
+            PLog.warning("log.warning.invalid_gradient_color", startColor, endColor)
+            return text
+        }
+    }
+
+    /**
+     * 创建三色渐变文本
+     * 
+     * @param text 渐变文本
+     * @param startColor 起始颜色 Hex
+     * @param middleColor 中间颜色 Hex
+     * @param endColor 结束颜色 Hex
+     * @return 渐变后的文本
+     */
+    fun createGradient(text: String, startColor: String, middleColor: String, endColor: String): String {
+        if (text.isEmpty()) return text
+        
+        try {
+            val start = ChatColor.of(startColor)
+            val middle = ChatColor.of(middleColor)
+            val end = ChatColor.of(endColor)
+            
+            val result = StringBuilder()
+            val length = text.length
+            
+            for (i in text.indices) {
+                val ratio = i.toDouble() / (length - 1)
+                val interpolatedColor = if (ratio <= 0.5) {
+                    val firstHalfRatio = ratio * 2
+                    interpolateColor(start, middle, firstHalfRatio)
+                } else {
+                    val secondHalfRatio = (ratio - 0.5) * 2
+                    interpolateColor(middle, end, secondHalfRatio)
+                }
+                result.append(interpolatedColor).append(text[i])
+            }
+            
+            return result.toString()
+        } catch (e: Exception) {
+            PLog.warning("log.warning.invalid_gradient_color", startColor, middleColor, endColor)
+            return text
+        }
+    }
+
+    /**
+     * 插值两个颜色
+     */
+    private fun interpolateColor(color1: ChatColor, color2: ChatColor, ratio: Double): String {
+        try {
+            // 获取颜色的 RGB 值
+            val rgb1 = color1.color?.rgb ?: 0xFFFFFF
+            val rgb2 = color2.color?.rgb ?: 0xFFFFFF
+            
+            // 插值 RGB 值
+            val r1 = (rgb1 shr 16) and 0xFF
+            val g1 = (rgb1 shr 8) and 0xFF
+            val b1 = rgb1 and 0xFF
+            
+            val r2 = (rgb2 shr 16) and 0xFF
+            val g2 = (rgb2 shr 8) and 0xFF
+            val b2 = rgb2 and 0xFF
+            
+            val r = (r1 + (r2 - r1) * ratio).toInt().coerceIn(0, 255)
+            val g = (g1 + (g2 - g1) * ratio).toInt().coerceIn(0, 255)
+            val b = (b1 + (b2 - b1) * ratio).toInt().coerceIn(0, 255)
+            
+            // 转换为 Hex 格式
+            val hexColor = String.format("#%02X%02X%02X", r, g, b)
+            return ChatColor.of(hexColor).toString()
+        } catch (e: Exception) {
+            // 如果插值失败，返回第一个颜色
+            return color1.toString()
         }
     }
 }
