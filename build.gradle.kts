@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "tech.ezeny"
-version = "3.1.0"
+version = "3.2.0"
 
 repositories {
     mavenCentral()
@@ -21,7 +21,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("org.spigotmc:spigot-api:1.21.7-R0.1-SNAPSHOT")
+    compileOnly("org.spigotmc:spigot-api:1.21.9-R0.1-SNAPSHOT")
     implementation("party.iroiro.luajava:luajava:4.0.2")
     implementation("party.iroiro.luajava:luajit:4.0.2")
     runtimeOnly("party.iroiro.luajava:luajit-platform:4.0.2:natives-desktop")
@@ -50,7 +50,6 @@ val copyWebpanelDist = tasks.register<Copy>("copyWebpanelDist") {
 
     doFirst {
         if (targetDir.exists()) {
-            println("Deleting existing webpanel dist: $targetDir")
             targetDir.deleteRecursively()
         }
     }

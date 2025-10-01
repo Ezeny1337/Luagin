@@ -22,7 +22,7 @@ val pluginModules = module {
 
     single { YamlManager(get()) }
     single { I18n(get()) }
-    single { PerformanceMonitor(get()) }
+    single { PerformanceMonitor(get(), get()) }
     single { NetworkManager(get()) }
     single { PermissionManager(get(), get()) }
     single { CommandManager(get(), get()) }

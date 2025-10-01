@@ -1,8 +1,12 @@
 package tech.ezeny.luagin.performance
 
 import org.bukkit.Bukkit
+import org.bukkit.configuration.file.YamlConfiguration
+import org.bukkit.scheduler.BukkitTask
 import tech.ezeny.luagin.Luagin
+import tech.ezeny.luagin.config.YamlManager
 import tech.ezeny.luagin.utils.PLog
+import java.io.File
 import java.lang.management.ManagementFactory
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
@@ -13,18 +17,29 @@ import oshi.hardware.NetworkIF
 import oshi.software.os.FileSystem
 import oshi.software.os.OperatingSystem
 
-class PerformanceMonitor(private val plugin: Luagin) {
-    private val systemInfo = SystemInfo()
+class PerformanceMonitor(private val plugin: Luagin, private val yamlManager: YamlManager) {
+    // 是否启用
+    @Volatile
+    var isEnabled: Boolean = false
+        private set
+
+    // 延迟初始化系统信息
+    private var systemInfo: SystemInfo? = null
 
     // 性能数据缓存
     private val performanceCache = ConcurrentHashMap<String, Any>()
-    private val lastUpdateTime = AtomicLong(0)
-    private val cacheExpiryTime = 1000L
 
     // 服务器数据缓存
     private val serverDataCache = ConcurrentHashMap<String, Any>()
-    private val lastServerUpdateTime = AtomicLong(0)
-    private val serverCacheExpiryTime = 1000L
+
+    // 更新频率
+    @Volatile
+    var serverUpdateInterval: Long = 20L
+        private set
+
+    @Volatile
+    var systemUpdateInterval: Long = 20L
+        private set
 
     // CPU使用率缓存
     private val cpuUsageCache = ConcurrentHashMap<String, Double>()
@@ -51,52 +66,150 @@ class PerformanceMonitor(private val plugin: Luagin) {
         val packetsRecv: Long
     )
 
+    // 定时任务引用
+    private var serverUpdateTask: BukkitTask? = null
+    private var systemUpdateTask: BukkitTask? = null
+
     init {
-        startPeriodicUpdate()
+        initializePerformanceMonitor()
+    }
+
+    /**
+     * 初始化性能监控系统
+     */
+    private fun initializePerformanceMonitor() {
+        try {
+            val config = yamlManager.getConfig("configs/performance.yml") ?: run {
+                createDefaultConfig()
+                yamlManager.getConfig("configs/performance.yml")
+                    ?: throw IllegalStateException("Failed to load performance configuration")
+            }
+
+            isEnabled = config.getBoolean("enabled", true)
+            if (!isEnabled) {
+                PLog.info("log.info.performance_disabled")
+                return
+            }
+
+            systemInfo = SystemInfo()
+
+            serverUpdateInterval = config.getLong("server_update_interval", 20L).coerceAtLeast(1L)
+            systemUpdateInterval = config.getLong("system_update_interval", 20L).coerceAtLeast(1L)
+
+            startPeriodicUpdate()
+            PLog.info("log.info.performance_enabled")
+        } catch (e: Exception) {
+            PLog.severe("log.severe.performance_init_failed", e.message ?: "Unknown error")
+            isEnabled = false
+        }
+    }
+
+    /**
+     * 创建默认配置文件
+     */
+    private fun createDefaultConfig() {
+        val defaultConfig = YamlConfiguration().apply {
+            set("enabled", true)
+            set("server_update_interval", 20L)
+            set("system_update_interval", 20L)
+        }
+
+        val configFile = File(plugin.dataFolder, "configs/performance.yml")
+        configFile.parentFile?.mkdirs()
+        defaultConfig.save(configFile)
     }
 
     /**
      * 启动定期更新任务
      */
     private fun startPeriodicUpdate() {
-        // 主线程（每20tick更新服务器数据，基于游戏刻）
-        Bukkit.getScheduler().runTaskTimer(plugin, Runnable {
+        if (!isEnabled) return
+
+        // 主线程（更新服务器数据，基于游戏刻）
+        serverUpdateTask = Bukkit.getScheduler().runTaskTimer(plugin, Runnable {
             try {
                 updateServerData()
             } catch (e: Exception) {
                 PLog.warning("log.warning.main_perf_update_failed", e.message ?: "Unknown error")
             }
-        }, 20L, 20L) // 每 20tick 更新一次
+        }, serverUpdateInterval, serverUpdateInterval)
 
-        // 后台线程（每秒更新 Java 和系统数据，基于真实时间）
-        Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, Runnable {
+        // 后台线程（更新 Java 和系统数据，基于真实时间）
+        systemUpdateTask = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, Runnable {
             try {
                 updateSystemData()
             } catch (e: Exception) {
                 PLog.warning("log.warning.async_perf_update_failed", e.message ?: "Unknown error")
             }
-        }, 20L, 20L) // 每 20tick 更新一次
+        }, systemUpdateInterval, systemUpdateInterval)
+    }
+
+    /**
+     * 更新服务器数据更新频率
+     * 注意：需要重启服务器才能生效
+     * @param intervalTicks 更新间隔（单位：tick）
+     */
+    fun updateServerUpdateInterval(intervalTicks: Long): Boolean {
+        if (!isEnabled) {
+            PLog.warning("log.warning.performance_disabled")
+            return false
+        }
+
+        if (intervalTicks <= 0) {
+            PLog.warning("log.warning.invalid_update_interval", intervalTicks.toString())
+            return false
+        }
+
+        // 更新配置文件
+        updateConfigValue("server_update_interval", intervalTicks)
+        return true
+    }
+
+    /**
+     * 更新系统数据更新频率
+     * 注意：需要重启服务器才能生效
+     * @param intervalTicks 更新间隔（单位：tick）
+     */
+    fun updateSystemUpdateInterval(intervalTicks: Long): Boolean {
+        if (!isEnabled) {
+            PLog.warning("log.warning.performance_disabled")
+            return false
+        }
+
+        if (intervalTicks <= 0) {
+            PLog.warning("log.warning.invalid_update_interval", intervalTicks.toString())
+            return false
+        }
+
+        // 更新配置文件
+        updateConfigValue("system_update_interval", intervalTicks)
+        return true
+    }
+
+    /**
+     * 更新配置值
+     */
+    private fun updateConfigValue(key: String, value: Any) {
+        val config = yamlManager.getConfig("configs/performance.yml")
+        config?.set(key, value)
+        yamlManager.saveConfig("configs/performance.yml")
     }
 
     /**
      * 更新服务器数据，基于游戏刻
      */
     private fun updateServerData() {
-        val currentTime = System.currentTimeMillis()
-        lastServerUpdateTime.set(currentTime)
-
         serverDataCache["server"] = getServerPerformance()
     }
 
     /**
-     * 更新系统数据，基于真实时间
+     * 更新系统/Java数据，基于真实时间
      */
     private fun updateSystemData() {
-        val currentTime = System.currentTimeMillis()
-        lastUpdateTime.set(currentTime)
+        val sysInfo = systemInfo ?: return
 
         // 刷新所有磁盘属性
-        systemInfo.hardware.diskStores.forEach { it.updateAttributes() }
+        sysInfo.hardware.diskStores.forEach { it.updateAttributes() }
 
         performanceCache["java"] = getJavaPerformance()
         performanceCache["system"] = getSystemPerformance()
@@ -194,7 +307,7 @@ class PerformanceMonitor(private val plugin: Luagin) {
                 "non_heap" to mapOf(
                     "used" to nonHeapMemoryUsage.used,
                     "committed" to nonHeapMemoryUsage.committed,
-                    ),
+                ),
                 "total" to mapOf(
                     "used" to (heapMemoryUsage.used + nonHeapMemoryUsage.used),
                     "committed" to (heapMemoryUsage.committed + nonHeapMemoryUsage.committed),
@@ -217,8 +330,9 @@ class PerformanceMonitor(private val plugin: Luagin) {
      * 获取系统性能数据
      */
     private fun getSystemPerformance(): Map<String, Any> {
-        val hardware = systemInfo.hardware
-        val operatingSystem = systemInfo.operatingSystem
+        val sysInfo = systemInfo ?: return emptyMap()
+        val hardware = sysInfo.hardware
+        val operatingSystem = sysInfo.operatingSystem
 
         // CPU 详细信息
         val processor = hardware.processor
@@ -304,7 +418,14 @@ class PerformanceMonitor(private val plugin: Luagin) {
         val currentTime = System.currentTimeMillis()
         val interval = if (previousDiskTime == 0L) 1000L else (currentTime - previousDiskTime).coerceAtLeast(1L)
 
-        val diskStores = systemInfo.hardware.diskStores
+        val sysInfo = systemInfo ?: return mapOf(
+            "total_space" to totalSpace,
+            "used_space" to usedSpace,
+            "free_space" to usableSpace,
+            "usage_percent" to truncate2(usedSpace.toDouble() / totalSpace.toDouble() * 100.0),
+            "stores" to emptyList<Map<String, Any>>()
+        )
+        val diskStores = sysInfo.hardware.diskStores
         val currentDiskStats = diskStores.associate { disk ->
             disk.name to (disk.readBytes to disk.writeBytes)
         }
@@ -382,8 +503,18 @@ class PerformanceMonitor(private val plugin: Luagin) {
         val packetsRecvPerSec = ((totalPacketsRecv - prevTotalPacketsRecv) * 1000.0 / interval).toLong()
 
         // Socket 连接数统计（所有TCP连接数）
-        val systemInfo = SystemInfo()
-        val os = systemInfo.operatingSystem
+        val sysInfo = systemInfo ?: return mapOf(
+            "total_bytes_sent" to totalBytesSent,
+            "total_bytes_recv" to totalBytesRecv,
+            "total_packets_sent" to totalPacketsSent,
+            "total_packets_recv" to totalPacketsRecv,
+            "bytes_sent_per_sec" to bytesSentPerSec,
+            "bytes_recv_per_sec" to bytesRecvPerSec,
+            "packets_sent_per_sec" to packetsSentPerSec,
+            "packets_recv_per_sec" to packetsRecvPerSec,
+            "socket_connection_count" to 0L
+        )
+        val os = sysInfo.operatingSystem
         val ipStats = os.internetProtocolStats
         val tcpv4Stats = ipStats.tcPv4Stats
         val tcpv6Stats = ipStats.tcPv6Stats
@@ -429,17 +560,15 @@ class PerformanceMonitor(private val plugin: Luagin) {
      * 获取所有性能数据
      */
     fun getAllPerformanceData(): Map<String, Any> {
+        if (!isEnabled) {
+            return mapOf(
+                "timestamp" to System.currentTimeMillis(),
+                "enabled" to false,
+                "data" to emptyMap<String, Any>()
+            )
+        }
+
         val currentTime = System.currentTimeMillis()
-
-        // 检查并更新服务器数据
-        if (currentTime - lastServerUpdateTime.get() > serverCacheExpiryTime) {
-            updateServerData()
-        }
-
-        // 检查并更新系统数据
-        if (currentTime - lastUpdateTime.get() > cacheExpiryTime) {
-            updateSystemData()
-        }
 
         // 合并所有数据
         val allData = mutableMapOf<String, Any>()
@@ -448,6 +577,7 @@ class PerformanceMonitor(private val plugin: Luagin) {
 
         return mapOf(
             "timestamp" to currentTime,
+            "enabled" to true,
             "data" to allData
         )
     }
@@ -457,32 +587,53 @@ class PerformanceMonitor(private val plugin: Luagin) {
      */
     @Suppress("UNCHECKED_CAST")
     fun getPerformanceData(type: String): Map<String, Any>? {
-        val currentTime = System.currentTimeMillis()
+        if (!isEnabled) return null
 
-        when (type) {
+        return when (type) {
             "server" -> {
-                if (currentTime - lastServerUpdateTime.get() > serverCacheExpiryTime) {
-                    updateServerData()
-                }
                 val data = serverDataCache[type]
-                return if (data is Map<*, *>) {
+                if (data is Map<*, *>) {
                     data as Map<String, Any>
                 } else null
             }
 
             "java", "system" -> {
-                if (currentTime - lastUpdateTime.get() > cacheExpiryTime) {
-                    updateSystemData()
-                }
                 val data = performanceCache[type]
-                return if (data is Map<*, *>) {
+                if (data is Map<*, *>) {
                     data as Map<String, Any>
                 } else null
             }
 
-            else -> return null
+            else -> null
         }
     }
+
+    /**
+     * 获取性能监控配置信息
+     */
+    fun getPerformanceConfig(): Map<String, Any> {
+        val config = yamlManager.getConfig("configs/performance.yml")
+
+        return if (config != null) {
+            val enabled = config.getBoolean("enabled", true)
+            val serverInterval = config.getInt("server_update_interval", 20)
+            val systemInterval = config.getInt("system_update_interval", 20)
+
+            mapOf(
+                "enabled" to enabled,
+                "server_update_interval" to serverInterval,
+                "system_update_interval" to systemInterval
+            )
+        } else {
+            mapOf(
+                "enabled" to true,
+                "server_update_interval" to 20,
+                "system_update_interval" to 20
+            )
+        }
+    }
+
+
 
     /**
      * 清理性能数据缓存
@@ -490,8 +641,6 @@ class PerformanceMonitor(private val plugin: Luagin) {
     fun clearCache() {
         performanceCache.clear()
         serverDataCache.clear()
-        lastUpdateTime.set(0)
-        lastServerUpdateTime.set(0)
         cpuUsageCache.clear()
         lastCpuUpdateTime.set(0)
         previousCpuTicks = LongArray(0)
@@ -501,6 +650,15 @@ class PerformanceMonitor(private val plugin: Luagin) {
         previousNetworkTime = 0
         previousDiskStats = emptyMap()
         previousDiskTime = 0
+    }
+
+    /**
+     * 停止所有定时任务
+     */
+    fun shutdown() {
+        serverUpdateTask?.cancel()
+        systemUpdateTask?.cancel()
+        clearCache()
     }
 
     /**

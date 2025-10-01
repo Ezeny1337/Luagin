@@ -56,7 +56,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         message.error(t('loginFail'));
       }
     } catch (error) {
-      console.error('登录请求失败:', error);
+      console.error('Login request failed:', error);
       message.error(t('loginNetworkFail'));
     }
   };

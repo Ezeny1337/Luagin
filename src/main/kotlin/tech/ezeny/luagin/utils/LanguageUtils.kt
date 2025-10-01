@@ -46,6 +46,8 @@ object LanguageUtils {
             enConfig.set("log.info.mysql_disabled", "MySQL disabled")
             enConfig.set("log.info.webpanel_started", "Web panel started, port: {0}")
             enConfig.set("log.info.webpanel_disabled", "Web panel disabled")
+            enConfig.set("log.info.performance_enabled", "Performance monitor enabled")
+            enConfig.set("log.info.performance_disabled", "Performance monitor disabled")
 
             // 警告级别消息
             enConfig.set("log.warning.event_not_found", "Event class {0}.{1} not found")
@@ -95,6 +97,8 @@ object LanguageUtils {
             enConfig.set("log.warning.get_per_cpu_failed", "Failed to get the usage percent of each CPU core: {0}")
             enConfig.set("log.warning.format_datetime_failed", "Failed to format datetime: {0}")
             enConfig.set("log.warning.webpanel_start_failed", "Failed to start web panel: {0}")
+            enConfig.set("log.warning.invalid_update_interval", "Invalid update interval: {0}")
+            enConfig.set("log.warning.performance_disabled", "Performance monitor is disabled")
 
             // 严重级别消息
             enConfig.set("log.severe.copy_shared_api_failed", "Shared API: {0} is nil in the main environment")
@@ -103,6 +107,7 @@ object LanguageUtils {
             enConfig.set("log.severe.loading_lua_failed", "Failed to load {0}: {1}")
             enConfig.set("log.severe.mysql_connection_failed", "Failed to connect MySQL: {0}")
             enConfig.set("log.severe.register_permission_failed", "Failed to register permission {0}: {1}")
+            enConfig.set("log.severe.performance_init_failed", "Failed to initialize performance monitor: {0}")
 
             // 配置文件消息
             enConfig.set("config.not_found", "Config not found: {0}")
@@ -158,6 +163,8 @@ object LanguageUtils {
             zhConfig.set("log.info.mysql_disabled", "MySQL 已禁用")
             zhConfig.set("log.info.webpanel_started", "Web 面板已启动, 端口: {0}")
             zhConfig.set("log.info.webpanel_disabled", "Web 面板已禁用")
+            zhConfig.set("log.info.performance_enabled", "性能监控已启用")
+            zhConfig.set("log.info.performance_disabled", "性能监控已禁用")
 
             zhConfig.set("log.warning.event_not_found", "找不到事件类 {0}.{1}")
             zhConfig.set("log.warning.register_event_handler_failed", "注册事件处理器失败: {0}")
@@ -203,6 +210,8 @@ object LanguageUtils {
             zhConfig.set("log.warning.get_per_cpu_failed", "获取每个 CPU 核心的使用率失败: {0}")
             zhConfig.set("log.warning.format_datetime_failed", "格式化日期时间失败: {0}")
             zhConfig.set("log.warning.webpanel_start_failed", "Web 面板启动失败: {0}")
+            zhConfig.set("log.warning.invalid_update_interval", "无效的更新频率: {0}")
+            zhConfig.set("log.warning.performance_disabled", "性能监控已禁用")
 
             // 严重级别消息
             zhConfig.set("log.severe.copy_shared_api_failed", "共享 API: {0} 在主环境为 nil")
@@ -211,6 +220,7 @@ object LanguageUtils {
             zhConfig.set("log.severe.loading_lua_failed", "加载 {0} 失败: {1}")
             zhConfig.set("log.severe.mysql_connection_failed", "连接 MySQL 失败: {0}")
             zhConfig.set("log.severe.register_permission_failed", "注册权限 {0} 失败: {1}")
+            zhConfig.set("log.severe.performance_init_failed", "初始化性能监控失败: {0}")
 
             // 配置文件消息
             zhConfig.set("config.not_found", "配置文件不存在: {0}")

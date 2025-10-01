@@ -71,7 +71,7 @@ function toKB(val: number) { return val / 1024; }
 
 const Performance: React.FC = () => {
   const { t } = useTranslation();
-  const perfData = usePerfData();
+  const { data: perfData, enabled } = usePerfData();
 
   // 服务器tab数据
   const server = perfData?.server || {};
@@ -144,10 +144,40 @@ const Performance: React.FC = () => {
   const packetsSentHistory = useHistoryData(packetsSentPerSec);
   const packetsRecvHistory = useHistoryData(packetsRecvPerSec);
 
+  if (enabled === null) {
+    return (
+      <div style={{ color: '#333', textAlign: 'center', padding: 64 }}>
+        {t('loading', 'Loading...')}
+      </div>
+    );
+  }
+
+  if (enabled === false) {
+    return (
+      <div style={{
+        color: '#333',
+        textAlign: 'center',
+        padding: 64,
+        background: '#fff',
+        borderRadius: 8,
+        margin: 24,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        border: '1px solid #e5e6eb'
+      }}>
+        <h2 style={{ color: '#1890ff', marginBottom: 16 }}>
+          {t('performance.disabled.title', 'Performance Monitor Disabled')}
+        </h2>
+        <p style={{ fontSize: 16, marginBottom: 24 }}>
+          {t('performance.disabled.description', 'Performance monitoring is currently disabled. Enable it in the configuration to view performance data.')}
+        </p>
+      </div>
+    );
+  }
+
   if (!perfData) {
     return (
       <div style={{ color: '#333', textAlign: 'center', padding: 64 }}>
-        {t('loading')}
+        {t('loading', 'Loading...')}
       </div>
     );
   }

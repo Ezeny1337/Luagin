@@ -66,7 +66,7 @@ const App: React.FC = () => {
               {
                 key: 'performance',
                 icon: <PieChartOutlined />,
-                label: t('performance'),
+                label: t('performanceTab'),
               },
               {
                 key: 'config',

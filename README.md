@@ -27,12 +27,10 @@ the server through Lua scripts in an extremely effective and efficient manner.
 
 | Features                             | Advantages                                                                                                                |
 |--------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
-| Kotlin Implementation                | More concise, modern and secure syntax features.                                                                          |
 | LuaJIT Implementation                | Extremely high running speed, complete support for Lua features.                                                          |
 | Friendly API design                  | Highly abstract and encapsulated, fluent chainable calls, excellent readability. More convenient Java object interaction. |
 | Friendly API docs                    | Easy to read, professional API docs.                                                                                      |
 | Inter-script communication           | Be competent for large and complex plugin development, even more modular.                                                 |
-| Koin DI framework and modular design | High cohesion and low coupling. High readability and maintainability.                                                     |
 | Translation                          | Language configs in different countries or regions that can be contributed by the community.                              |
 | Web Panel                            | Modern Web panel can help you monitor server data and configure plugin intuitively and conveniently.                      |
 

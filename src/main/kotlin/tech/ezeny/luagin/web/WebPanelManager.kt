@@ -105,12 +105,15 @@ class WebPanelManager(
                             .withIssuer("luagin-webpanel")
                             .withClaim("username", username)
                             .sign(Algorithm.HMAC256(jwtSecret))
+                        val webpanelConfig = yamlManager.getConfig("configs/webpanel.yml")
+                        val cookieExpiryMinutes = webpanelConfig?.getInt("auth.cookieExpiry", 30) ?: 30
+
                         call.response.cookies.append(
                             Cookie(
                                 name = "luagin_token",
                                 value = token,
                                 httpOnly = true,
-                                maxAge = 1800, // 30分钟
+                                maxAge = cookieExpiryMinutes * 60,
                                 path = "/"
                             )
                         )
@@ -140,7 +143,7 @@ class WebPanelManager(
                     get("/api/config/all") {
                         val configs = mutableMapOf<String, Any>()
 
-                        // 获取WebPanel配置
+                        // 获取 WebPanel 配置
                         val webpanelConfig = yamlManager.getConfig("configs/webpanel.yml")
                         configs["webpanel"] = if (webpanelConfig != null) {
                             mapOf(
@@ -149,7 +152,8 @@ class WebPanelManager(
                                     "enabled" to webpanelConfig.getBoolean("auth.enabled", true),
                                     "username" to webpanelConfig.getString("auth.username", "admin"),
                                     "password" to webpanelConfig.getString("auth.password", "admin"),
-                                    "jwtSecret" to webpanelConfig.getString("auth.jwtSecret", "LuaginDefaultSecret")
+                                    "jwtSecret" to webpanelConfig.getString("auth.jwtSecret", "LuaginDefaultSecret"),
+                                    "cookieExpiry" to webpanelConfig.getInt("auth.cookieExpiry", 30)
                                 )
                             )
                         } else {
@@ -159,16 +163,17 @@ class WebPanelManager(
                                     "enabled" to true,
                                     "username" to "admin",
                                     "password" to "admin",
-                                    "jwtSecret" to "LuaginDefaultSecret"
+                                    "jwtSecret" to "LuaginDefaultSecret",
+                                    "cookieExpiry" to 30
                                 )
                             )
                         }
 
-                        // 获取MySQL配置
+                        // 获取 MySQL 配置
                         val mysqlConfig = yamlManager.getConfig("configs/mysql.yml")
                         configs["mysql"] = if (mysqlConfig != null) {
                             mapOf(
-                                "enable" to mysqlConfig.getBoolean("enable", false),
+                                "enabled" to mysqlConfig.getBoolean("enabled", false),
                                 "host" to mysqlConfig.getString("host", "localhost"),
                                 "port" to mysqlConfig.getInt("port", 3306),
                                 "database" to mysqlConfig.getString("database", "luagin"),
@@ -178,7 +183,7 @@ class WebPanelManager(
                             )
                         } else {
                             mapOf(
-                                "enable" to false,
+                                "enabled" to false,
                                 "host" to "localhost",
                                 "port" to 3306,
                                 "database" to "luagin",
@@ -188,16 +193,31 @@ class WebPanelManager(
                             )
                         }
 
+                        // 获取性能配置
+                        val performanceConfig = performanceMonitor.getPerformanceConfig()
+                        configs["performance"] = performanceConfig
+
                         // 获取权限配置
                         val permissionsConfig = yamlManager.getConfig("configs/permissions.yml")
                         configs["permissions"] = if (permissionsConfig != null) {
                             val groupsSection = permissionsConfig.getConfigurationSection("groups")
                             val playersSection = permissionsConfig.getConfigurationSection("players")
 
-                            val groupsMap = groupsSection?.getValues(false)?.filterValues { it != null }
-                                ?.mapValues { it.value as Any } ?: emptyMap<String, Any>()
-                            val playersMap = playersSection?.getValues(false)?.filterValues { it != null }
-                                ?.mapValues { it.value as Any } ?: emptyMap<String, Any>()
+                            // 转换 MemorySection 为 Map
+                            val groupsMap = groupsSection?.getKeys(false)?.associateWith { groupName ->
+                                mapOf(
+                                    "weight" to permissionsConfig.getInt("groups.$groupName.weight", 0),
+                                    "permissions" to permissionsConfig.getStringList("groups.$groupName.permissions"),
+                                    "inherit" to permissionsConfig.getStringList("groups.$groupName.inherit")
+                                )
+                            } ?: emptyMap<String, Any>()
+                            
+                            val playersMap = playersSection?.getKeys(false)?.associateWith { playerName ->
+                                mapOf(
+                                    "groups" to permissionsConfig.getStringList("players.$playerName.groups"),
+                                    "permissions" to permissionsConfig.getStringList("players.$playerName.permissions")
+                                )
+                            } ?: emptyMap<String, Any>()
 
                             mapOf(
                                 "groups" to groupsMap,
@@ -231,7 +251,8 @@ class WebPanelManager(
                                         "enabled" to (auth["enabled"] ?: true),
                                         "username" to (auth["username"] ?: "admin"),
                                         "password" to (auth["password"] ?: "admin"),
-                                        "jwtSecret" to (auth["jwtSecret"] ?: "LuaginDefaultSecret")
+                                        "jwtSecret" to (auth["jwtSecret"] ?: "LuaginDefaultSecret"),
+                                        "cookieExpiry" to (auth["cookieExpiry"] ?: 30)
                                     )
                                 }
 
@@ -247,7 +268,7 @@ class WebPanelManager(
 
                             "mysql" -> {
                                 val configMap = mapOf(
-                                    "enable" to (configData["enable"] ?: false),
+                                    "enabled" to (configData["enabled"] ?: false),
                                     "host" to (configData["host"] ?: "localhost"),
                                     "port" to (configData["port"] ?: 3306),
                                     "database" to (configData["database"] ?: "luagin"),
@@ -261,6 +282,63 @@ class WebPanelManager(
                                 } else {
                                     call.respondText(
                                         "Failed to save mysql config",
+                                        status = HttpStatusCode.InternalServerError
+                                    )
+                                }
+                            }
+
+                            "performance" -> {
+                                val configMap = mapOf(
+                                    "enabled" to (configData["enabled"] ?: true),
+                                    "server_update_interval" to (configData["server_update_interval"] ?: 20L),
+                                    "system_update_interval" to (configData["system_update_interval"] ?: 20L)
+                                )
+
+                                val fileSuccess = yamlManager.createOrUpdateConfig("configs/performance.yml", configMap)
+
+                                if (fileSuccess) {
+                                    var success = true
+                                    val errors = mutableListOf<String>()
+
+                                    val enabled = configData["enabled"] as? Boolean
+                                    val serverInterval = configData["server_update_interval"] as? Number
+                                    val systemInterval = configData["system_update_interval"] as? Number
+
+                                    var restartRequired = false
+                                    if (enabled != null && enabled != performanceMonitor.isEnabled) {
+                                        restartRequired = true
+                                    }
+
+                                    if (performanceMonitor.isEnabled) {
+                                        if (serverInterval != null) {
+                                            if (!performanceMonitor.updateServerUpdateInterval(serverInterval.toLong())) {
+                                                success = false
+                                                errors.add("Failed to update server update interval")
+                                            }
+                                        }
+
+                                        if (systemInterval != null) {
+                                            if (!performanceMonitor.updateSystemUpdateInterval(systemInterval.toLong())) {
+                                                success = false
+                                                errors.add("Failed to update system update interval")
+                                            }
+                                        }
+                                    }
+
+                                    val response = mutableMapOf<String, Any>("success" to success)
+                                    if (restartRequired) {
+                                        response["restart_required"] = true
+                                        response["message"] =
+                                            "Server restart required for enable/disable changes to take effect"
+                                    }
+                                    if (errors.isNotEmpty()) {
+                                        response["errors"] = errors
+                                    }
+
+                                    call.respond(response)
+                                } else {
+                                    call.respondText(
+                                        "Failed to save performance config",
                                         status = HttpStatusCode.InternalServerError
                                     )
                                 }
@@ -399,7 +477,8 @@ class WebPanelManager(
                 enabled = authSection.getBoolean("enabled", true),
                 username = authSection.getString("username", "admin") ?: "admin",
                 password = authSection.getString("password", "admin") ?: "admin",
-                jwtSecret = authSection.getString("jwtSecret", "LuaginDefaultSecret") ?: "LuaginDefaultSecret"
+                jwtSecret = authSection.getString("jwtSecret", "LuaginDefaultSecret") ?: "LuaginDefaultSecret",
+                cookieExpiry = authSection.getInt("cookieExpiry", 30)
             )
         } else {
             WebPanelAuthConfig()
@@ -416,6 +495,7 @@ class WebPanelManager(
         yaml.set("auth.username", config.auth.username)
         yaml.set("auth.password", config.auth.password)
         yaml.set("auth.jwtSecret", config.auth.jwtSecret)
+        yaml.set("auth.cookieExpiry", config.auth.cookieExpiry)
         return try {
             yaml.save(file)
             true

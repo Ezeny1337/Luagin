@@ -11,6 +11,7 @@ import tech.ezeny.luagin.di.getKoinModules
 import tech.ezeny.luagin.di.pluginModules
 import tech.ezeny.luagin.gui.inventory.InventoryGuiListener
 import tech.ezeny.luagin.permissions.PermissionManager
+import tech.ezeny.luagin.performance.PerformanceMonitor
 import tech.ezeny.luagin.utils.PLog
 import tech.ezeny.luagin.web.WebPanelManager
 
@@ -39,6 +40,9 @@ class Luagin : JavaPlugin() {
     }
 
     override fun onDisable() {
+        val performanceMonitor = getKoin().get<PerformanceMonitor>()
+        performanceMonitor.shutdown()
+
         val permissionManager = getKoin().get<PermissionManager>()
         permissionManager.cleanup()
 

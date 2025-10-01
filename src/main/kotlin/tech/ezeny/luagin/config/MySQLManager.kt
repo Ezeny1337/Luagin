@@ -38,7 +38,7 @@ class MySQLManager(private val plugin: Luagin, private val yamlManager: YamlMana
                     ?: throw IllegalStateException("Failed to load MySQL configuration")
             }
 
-            isEnabled = config.getBoolean("enable", false)
+            isEnabled = config.getBoolean("enabled", false)
             if (!isEnabled) {
                 PLog.info("log.info.mysql_disabled")
                 return
@@ -76,7 +76,7 @@ class MySQLManager(private val plugin: Luagin, private val yamlManager: YamlMana
 
     private fun createDefaultConfig() {
         val defaultConfig = YamlConfiguration().apply {
-            set("enable", false)
+            set("enabled", false)
             set("host", "localhost")
             set("port", 3306)
             set("database", "luagin")

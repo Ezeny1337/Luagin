@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { Form, Input, Switch, Button, Card, Space, Typography, Alert } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Form, Input, Switch, Button, Card, Space, Typography, Alert, InputNumber } from 'antd';
 import { SaveOutlined, EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 
@@ -13,29 +13,63 @@ interface WebPanelConfigProps {
 
 const WebPanelConfig: React.FC<WebPanelConfigProps> = ({ config, onSave, loading }) => {
   const { t } = useTranslation();
-  const [form] = Form.useForm();
 
+  // 使用受控组件模式
+  const [enabled, setEnabled] = useState(true);
+  const [authEnabled, setAuthEnabled] = useState(true);
+  const [username, setUsername] = useState('admin');
+  const [password, setPassword] = useState('admin');
+  const [jwtSecret, setJwtSecret] = useState('LuaginDefaultSecret');
+  const [cookieExpiry, setCookieExpiry] = useState(30);
+
+  // 同步config变化到state
   useEffect(() => {
-    if (config) {
-      form.setFieldsValue({
-        enabled: config.enabled ?? true,
-        auth: {
-          enabled: config.auth?.enabled ?? true,
-          username: config.auth?.username ?? 'admin',
-          password: config.auth?.password ?? 'admin',
-          jwtSecret: config.auth?.jwtSecret ?? 'LuaginDefaultSecret',
-        },
-      });
+    if (config && typeof config === 'object') {
+      if ('enabled' in config) {
+        setEnabled(config.enabled);
+      }
+      if (config.auth && typeof config.auth === 'object') {
+        if ('enabled' in config.auth) {
+          setAuthEnabled(config.auth.enabled);
+        }
+        if ('username' in config.auth) {
+          setUsername(config.auth.username);
+        }
+        if ('password' in config.auth) {
+          setPassword(config.auth.password);
+        }
+        if ('jwtSecret' in config.auth) {
+          setJwtSecret(config.auth.jwtSecret);
+        }
+        if ('cookieExpiry' in config.auth) {
+          setCookieExpiry(config.auth.cookieExpiry);
+        }
+      }
     }
-  }, [config, form]);
+  }, [config]);
 
   const handleSave = async () => {
-    try {
-      const values = await form.validateFields();
-      onSave(values);
-    } catch (error) {
-      console.error('Validation failed:', error);
+    if (!username.trim() || username.length < 3) {
+      return;
     }
+    if (!password.trim() || password.length < 6) {
+      return;
+    }
+    if (!jwtSecret.trim() || jwtSecret.length < 16) {
+      return;
+    }
+
+    const values = {
+      enabled,
+      auth: {
+        enabled: authEnabled,
+        username: username.trim(),
+        password: password.trim(),
+        jwtSecret: jwtSecret.trim(),
+        cookieExpiry,
+      },
+    };
+    onSave(values);
   };
 
   const cardStyle = {
@@ -57,27 +91,16 @@ const WebPanelConfig: React.FC<WebPanelConfigProps> = ({ config, onSave, loading
         style={{ marginBottom: 16 }}
       />
 
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={{
-          enabled: true,
-          auth: {
-            enabled: true,
-            username: 'admin',
-            password: 'admin',
-            jwtSecret: 'LuaginDefaultSecret',
-          },
-        }}
-      >
+      <Form layout="vertical">
         <Card style={cardStyle}>
           <Title level={4}>{t('config.webpanelConfig.basic')}</Title>
           <Form.Item
-            name="enabled"
             label={t('config.webpanelConfig.enabled')}
-            valuePropName="checked"
           >
-            <Switch />
+            <Switch
+              checked={enabled}
+              onChange={setEnabled}
+            />
           </Form.Item>
         </Card>
 
@@ -85,33 +108,30 @@ const WebPanelConfig: React.FC<WebPanelConfigProps> = ({ config, onSave, loading
           <Title level={4}>{t('config.webpanelConfig.auth')}</Title>
           
           <Form.Item
-            name={['auth', 'enabled']}
             label={t('config.webpanelConfig.authEnabled')}
-            valuePropName="checked"
           >
-            <Switch />
+            <Switch
+              checked={authEnabled}
+              onChange={setAuthEnabled}
+            />
           </Form.Item>
 
           <Form.Item
-            name={['auth', 'username']}
             label={t('config.webpanelConfig.username')}
-            rules={[
-              { required: true, message: t('config.webpanelConfig.usernameRequired') },
-              { min: 3, message: t('config.webpanelConfig.usernameMinLength') },
-            ]}
           >
-            <Input placeholder={t('config.webpanelConfig.usernamePlaceholder')} />
+            <Input
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder={t('config.webpanelConfig.usernamePlaceholder')}
+            />
           </Form.Item>
 
           <Form.Item
-            name={['auth', 'password']}
             label={t('config.webpanelConfig.password')}
-            rules={[
-              { required: true, message: t('config.webpanelConfig.passwordRequired') },
-              { min: 6, message: t('config.webpanelConfig.passwordMinLength') },
-            ]}
           >
             <Input.Password
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder={t('config.webpanelConfig.passwordPlaceholder')}
               iconRender={(visible) =>
                 visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
@@ -120,19 +140,30 @@ const WebPanelConfig: React.FC<WebPanelConfigProps> = ({ config, onSave, loading
           </Form.Item>
 
           <Form.Item
-            name={['auth', 'jwtSecret']}
             label={t('config.webpanelConfig.jwtSecret')}
-            rules={[
-              { required: true, message: t('config.webpanelConfig.jwtSecretRequired') },
-              { min: 16, message: t('config.webpanelConfig.jwtSecretMinLength') },
-            ]}
             extra={t('config.webpanelConfig.jwtSecretHelp')}
           >
             <Input.Password
+              value={jwtSecret}
+              onChange={(e) => setJwtSecret(e.target.value)}
               placeholder={t('config.webpanelConfig.jwtSecretPlaceholder')}
               iconRender={(visible) =>
                 visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
               }
+            />
+          </Form.Item>
+
+          <Form.Item
+            label={t('config.webpanelConfig.cookieExpiry', 'Cookie Expiry Time (minutes)')}
+            extra={t('config.webpanelConfig.cookieExpiryHelp', 'How long the login session will last. Default is 30 minutes.')}
+          >
+            <InputNumber
+              value={cookieExpiry}
+              onChange={(value) => setCookieExpiry(value || 30)}
+              min={1}
+              max={10080}
+              style={{ width: '100%' }}
+              placeholder={t('config.webpanelConfig.cookieExpiryPlaceholder', '30')}
             />
           </Form.Item>
         </Card>

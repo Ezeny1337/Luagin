@@ -4,6 +4,7 @@ import { ReloadOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import WebPanelConfig from './WebPanelConfig';
 import MySQLConfig from './MySQLConfig';
+import PerformanceConfig from './PerformanceConfig';
 import PermissionsConfig from './PermissionsConfig';
 
 const { TabPane } = Tabs;
@@ -29,6 +30,7 @@ const Config: React.FC = () => {
     setLoading(true);
     try {
       const response = await fetch('/api/config/all', { credentials: 'include' });
+
       if (response.ok) {
         const data = await response.json();
         setConfigs(data);
@@ -36,6 +38,7 @@ const Config: React.FC = () => {
         message.error(t('config.fetchFailed'));
       }
     } catch (error) {
+      console.error('Failed to fetch configs:', error);
       message.error(t('config.fetchFailed'));
     } finally {
       setLoading(false);
@@ -43,7 +46,7 @@ const Config: React.FC = () => {
   };
 
   // 保存配置
-  const saveConfig = async (configName: string, configData: any): Promise<void> => {
+  const saveConfig = async (configName: string, configData: any): Promise<any> => {
     setLoading(true);
     try {
       const response = await fetch(`/api/config/${configName}`, {
@@ -54,15 +57,21 @@ const Config: React.FC = () => {
         credentials: 'include',
         body: JSON.stringify(configData),
       });
-      
+
       if (response.ok) {
+        const result = await response.json();
+
         message.success(t('config.saveSuccess'));
+
         await fetchConfigs(); // 重新获取配置
+        return result;
       } else {
         message.error(t('config.saveFailed'));
+        return { success: false };
       }
     } catch (error) {
       message.error(t('config.saveFailed'));
+      return { success: false };
     } finally {
       setLoading(false);
     }
@@ -104,9 +113,16 @@ const Config: React.FC = () => {
             />
           </TabPane>
           <TabPane tab={t('config.mysql')} key="mysql">
-            <MySQLConfig 
-              config={configs.mysql} 
+            <MySQLConfig
+              config={configs.mysql}
               onSave={(data) => saveConfig('mysql', data)}
+              loading={loading}
+            />
+          </TabPane>
+          <TabPane tab={t('config.performance')} key="performance">
+            <PerformanceConfig
+              config={configs.performance}
+              onSave={(data) => saveConfig('performance', data)}
               loading={loading}
             />
           </TabPane>

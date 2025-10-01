@@ -1,6 +1,6 @@
 {
     "title": "Luagin 面板",
-    "performance": "数据监控",
+    "performanceTab": "数据监控",
     "darkMode": "深色模式",
     "loading": "加载中...",
     "basicInfo": "基本信息",
@@ -100,10 +100,17 @@
     "javaMemory": "Java 内存",
     "javaMemoryUsage": "Java 内存使用",
     "javaMemoryHistory": "Java 内存历史曲线",
+    "performance": {
+        "disabled": {
+            "title": "性能监控已禁用",
+            "description": "性能监控当前已禁用。请在配置中启用它以查看性能数据。"
+        }
+    },
     "config": {
         "title": "插件配置",
         "webpanel": "Web面板",
         "mysql": "MySQL数据库",
+        "performance": "性能监控",
         "permissions": "权限管理",
         "save": "保存配置",
         "refresh": "刷新配置",
@@ -129,13 +136,37 @@
             "jwtSecretRequired": "请输入JWT密钥",
             "jwtSecretMinLength": "JWT密钥至少16个字符",
             "jwtSecretPlaceholder": "请输入JWT密钥",
-            "jwtSecretHelp": "用于签名JWT令牌的密钥，建议使用随机字符串"
+            "jwtSecretHelp": "用于签名JWT令牌的密钥，建议使用随机字符串",
+            "cookieExpiry": "Cookie过期时间（分钟）",
+            "cookieExpiryRequired": "请输入Cookie过期时间",
+            "cookieExpiryRange": "Cookie过期时间必须在1到10080分钟之间（1周）",
+            "cookieExpiryPlaceholder": "30",
+            "cookieExpiryHelp": "登录会话的持续时间，默认为30分钟。"
+        },
+        "performanceConfig": {
+            "save": "保存配置",
+            "description": "性能监控配置",
+            "descriptionDetail": "配置性能监控设置，其性能开销很小，但您依然可以禁用它",
+            "basic": "基本设置",
+            "enabled": "启用性能监控",
+            "intervals": "更新频率",
+            "serverInterval": "服务器数据更新频率 (tick)",
+            "serverIntervalRequired": "请输入服务器更新频率",
+            "serverIntervalPlaceholder": "20",
+            "serverIntervalDesc": "更新服务器数据的频率 (取决于游戏刻)。20 tick = 1秒。较低的值提供更实时的数据但性能开销更高。",
+            "systemInterval": "系统数据更新频率 (tick)",
+            "systemIntervalRequired": "请输入系统更新频率",
+            "systemIntervalPlaceholder": "20",
+            "systemIntervalDesc": "更新系统/java数据的频率 (取决于真实时间)。20 tick = 1秒。较低的值提供更实时的数据但性能开销更高。",
+            "intervalMin": "最小值为 1 tick",
+            "disabledTitle": "性能监控已禁用",
+            "disabledDesc": "性能监控当前已禁用。在您启用它之前，系统性能数据将不可用。"
         },
         "mysqlConfig": {
             "description": "MySQL数据库配置",
             "descriptionDetail": "配置MySQL数据库连接信息，用于数据存储",
             "basic": "基本设置",
-            "enable": "启用MySQL",
+            "enabled": "启用MySQL",
             "connection": "连接设置",
             "host": "主机地址",
             "hostRequired": "请输入主机地址",

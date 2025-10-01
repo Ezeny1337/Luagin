@@ -9,5 +9,6 @@ data class WebPanelAuthConfig(
     val enabled: Boolean = true,
     val username: String = "admin",
     val password: String = "admin",
-    val jwtSecret: String = "LuaginDefaultSecret"
+    val jwtSecret: String = "LuaginDefaultSecret",
+    val cookieExpiry: Int = 30
 )

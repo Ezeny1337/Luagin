@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Form, Input, Switch, InputNumber, Button, Card, Space, Typography, Alert } from 'antd';
 import { SaveOutlined, DatabaseOutlined, EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -13,39 +13,70 @@ interface MySQLConfigProps {
 
 const MySQLConfig: React.FC<MySQLConfigProps> = ({ config, onSave, loading }) => {
   const { t } = useTranslation();
-  const [form] = Form.useForm();
 
+  // 使用受控组件模式
+  const [enabled, setEnabled] = useState(false);
+  const [host, setHost] = useState('localhost');
+  const [port, setPort] = useState(3306);
+  const [database, setDatabase] = useState('luagin');
+  const [username, setUsername] = useState('root');
+  const [password, setPassword] = useState('');
+  const [poolSize, setPoolSize] = useState(10);
+
+  // 同步config变化到state
   useEffect(() => {
-    if (config) {
-      form.setFieldsValue({
-        enable: config.enable ?? false,
-        host: config.host ?? 'localhost',
-        port: config.port ?? 3306,
-        database: config.database ?? 'luagin',
-        username: config.username ?? 'root',
-        password: config.password ?? '',
-        poolSize: config['pool-size'] ?? 10,
-      });
+    if (config && typeof config === 'object') {
+      if ('enabled' in config) {
+        setEnabled(config.enabled);
+      }
+      if ('host' in config) {
+        setHost(config.host);
+      }
+      if ('port' in config) {
+        setPort(config.port);
+      }
+      if ('database' in config) {
+        setDatabase(config.database);
+      }
+      if ('username' in config) {
+        setUsername(config.username);
+      }
+      if ('password' in config) {
+        setPassword(config.password);
+      }
+      if ('pool-size' in config) {
+        setPoolSize(config['pool-size']);
+      }
     }
-  }, [config, form]);
+  }, [config]);
+
+
 
   const handleSave = async () => {
-    try {
-      const values = await form.validateFields();
-      // 转换字段名以匹配后端期望的格式
-      const formattedValues = {
-        enable: values.enable,
-        host: values.host,
-        port: values.port,
-        database: values.database,
-        username: values.username,
-        password: values.password,
-        'pool-size': values.poolSize,
-      };
-      onSave(formattedValues);
-    } catch (error) {
-      console.error('Validation failed:', error);
+    if (!host.trim()) {
+      return;
     }
+    if (port < 1 || port > 65535) {
+      return;
+    }
+    if (!database.trim()) {
+      return;
+    }
+    if (!username.trim()) {
+      return;
+    }
+
+    // 转换字段名以匹配后端期望的格式
+    const formattedValues = {
+      enabled,
+      host: host.trim(),
+      port,
+      database: database.trim(),
+      username: username.trim(),
+      password: password.trim(),
+      'pool-size': poolSize,
+    };
+    onSave(formattedValues);
   };
 
   const cardStyle = {
@@ -67,19 +98,9 @@ const MySQLConfig: React.FC<MySQLConfigProps> = ({ config, onSave, loading }) =>
         style={{ marginBottom: 16 }}
       />
 
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={{
-          enable: false,
-          host: 'localhost',
-          port: 3306,
-          database: 'luagin',
-          username: 'root',
-          password: '',
-          poolSize: 10,
-        }}
-      >
+
+
+      <Form layout="vertical">
         <Card style={cardStyle}>
           <Title level={4}>
             <DatabaseOutlined style={{ marginRight: 8 }} />
@@ -87,11 +108,12 @@ const MySQLConfig: React.FC<MySQLConfigProps> = ({ config, onSave, loading }) =>
           </Title>
           
           <Form.Item
-            name="enable"
-            label={t('config.mysqlConfig.enable')}
-            valuePropName="checked"
+            label={t('config.mysqlConfig.enabled')}
           >
-            <Switch />
+            <Switch
+              checked={enabled}
+              onChange={setEnabled}
+            />
           </Form.Item>
         </Card>
 
@@ -99,24 +121,21 @@ const MySQLConfig: React.FC<MySQLConfigProps> = ({ config, onSave, loading }) =>
           <Title level={4}>{t('config.mysqlConfig.connection')}</Title>
           
           <Form.Item
-            name="host"
             label={t('config.mysqlConfig.host')}
-            rules={[
-              { required: true, message: t('config.mysqlConfig.hostRequired') },
-            ]}
           >
-            <Input placeholder={t('config.mysqlConfig.hostPlaceholder')} />
+            <Input
+              value={host}
+              onChange={(e) => setHost(e.target.value)}
+              placeholder={t('config.mysqlConfig.hostPlaceholder')}
+            />
           </Form.Item>
 
           <Form.Item
-            name="port"
             label={t('config.mysqlConfig.port')}
-            rules={[
-              { required: true, message: t('config.mysqlConfig.portRequired') },
-              { type: 'number', min: 1, max: 65535, message: t('config.mysqlConfig.portRange') },
-            ]}
           >
             <InputNumber
+              value={port}
+              onChange={(value) => setPort(value || 3306)}
               placeholder={t('config.mysqlConfig.portPlaceholder')}
               style={{ width: '100%' }}
               min={1}
@@ -125,37 +144,35 @@ const MySQLConfig: React.FC<MySQLConfigProps> = ({ config, onSave, loading }) =>
           </Form.Item>
 
           <Form.Item
-            name="database"
             label={t('config.mysqlConfig.database')}
-            rules={[
-              { required: true, message: t('config.mysqlConfig.databaseRequired') },
-            ]}
           >
-            <Input placeholder={t('config.mysqlConfig.databasePlaceholder')} />
+            <Input
+              value={database}
+              onChange={(e) => setDatabase(e.target.value)}
+              placeholder={t('config.mysqlConfig.databasePlaceholder')}
+            />
           </Form.Item>
         </Card>
 
         <Card style={cardStyle}>
           <Title level={4}>{t('config.mysqlConfig.credentials')}</Title>
-          
+
           <Form.Item
-            name="username"
             label={t('config.mysqlConfig.username')}
-            rules={[
-              { required: true, message: t('config.mysqlConfig.usernameRequired') },
-            ]}
           >
-            <Input placeholder={t('config.mysqlConfig.usernamePlaceholder')} />
+            <Input
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder={t('config.mysqlConfig.usernamePlaceholder')}
+            />
           </Form.Item>
 
           <Form.Item
-            name="password"
             label={t('config.mysqlConfig.password')}
-            rules={[
-              { required: true, message: t('config.mysqlConfig.passwordRequired') },
-            ]}
           >
             <Input.Password
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder={t('config.mysqlConfig.passwordPlaceholder')}
               iconRender={(visible) =>
                 visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
@@ -168,15 +185,12 @@ const MySQLConfig: React.FC<MySQLConfigProps> = ({ config, onSave, loading }) =>
           <Title level={4}>{t('config.mysqlConfig.advanced')}</Title>
           
           <Form.Item
-            name="poolSize"
             label={t('config.mysqlConfig.poolSize')}
-            rules={[
-              { required: true, message: t('config.mysqlConfig.poolSizeRequired') },
-              { type: 'number', min: 1, max: 100, message: t('config.mysqlConfig.poolSizeRange') },
-            ]}
             extra={t('config.mysqlConfig.poolSizeHelp')}
           >
             <InputNumber
+              value={poolSize}
+              onChange={(value) => setPoolSize(value || 10)}
               placeholder={t('config.mysqlConfig.poolSizePlaceholder')}
               style={{ width: '100%' }}
               min={1}
