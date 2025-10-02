@@ -10,6 +10,7 @@ import tech.ezeny.luagin.config.MySQLManager
 import tech.ezeny.luagin.di.getKoinModules
 import tech.ezeny.luagin.di.pluginModules
 import tech.ezeny.luagin.gui.inventory.InventoryGuiListener
+import tech.ezeny.luagin.gui.chat.ChatListener
 import tech.ezeny.luagin.permissions.PermissionManager
 import tech.ezeny.luagin.performance.PerformanceMonitor
 import tech.ezeny.luagin.utils.PLog
@@ -35,6 +36,9 @@ class Luagin : JavaPlugin() {
 
         // 注册 Inventory 事件监听器
         server.pluginManager.registerEvents(InventoryGuiListener, this)
+        
+        // 注册聊天事件监听器
+        server.pluginManager.registerEvents(ChatListener, this)
 
         PLog.info("log.info.loading_completed")
     }

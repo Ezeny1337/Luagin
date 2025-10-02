@@ -7,10 +7,13 @@ object ColorUtils {
 
     // Hex 颜色的正则表达式模式，匹配 \a 后跟 6 位十六进制字符
     val HEX_PATTERN = "\u0007([0-9a-fA-F]{6})".toRegex()
+    
+    // & 颜色代码的正则表达式模式，匹配 & 后跟一个字符
+    val AMPERSAND_PATTERN = "&([0-9a-fA-Fk-oK-OrR])".toRegex()
 
     /**
      * 将带有颜色代码的字符串转换为 TextComponent
-     * 支持 \aRRGGBB 格式的 Hex 颜色和 § 格式的原版颜色代码
+     * 支持 \aRRGGBB 格式的 Hex 颜色、& 格式的颜色代码和 § 格式的原版颜色代码
      *
      * @param text 包含颜色代码的文本
      * @return 格式化后的 TextComponent
@@ -37,14 +40,18 @@ object ColorUtils {
             if (formattedText[i] == '§' && i + 1 < formattedText.length) {
                 // 如果有累积的文本，先添加到结果中
                 if (currentText.isNotEmpty()) {
-                    val component = TextComponent(currentText)
-                    if (currentColor != null) component.color = currentColor
-                    component.isBold = isBold
-                    component.isItalic = isItalic
-                    component.isUnderlined = isUnderlined
-                    component.isStrikethrough = isStrikethrough
-                    component.isObfuscated = isObfuscated
-                    result.addExtra(component)
+                    // 确保文本中不包含任何格式化代码
+                    val cleanText = currentText.replace("§[0-9a-fk-orx]".toRegex(), "")
+                    if (cleanText.isNotEmpty()) {
+                        val component = TextComponent(cleanText)
+                        if (currentColor != null) component.color = currentColor
+                        component.isBold = isBold
+                        component.isItalic = isItalic
+                        component.isUnderlined = isUnderlined
+                        component.isStrikethrough = isStrikethrough
+                        component.isObfuscated = isObfuscated
+                        result.addExtra(component)
+                    }
                     currentText = ""
                 }
 
@@ -179,14 +186,18 @@ object ColorUtils {
 
         // 添加最后一段文本
         if (currentText.isNotEmpty()) {
-            val component = TextComponent(currentText)
-            if (currentColor != null) component.color = currentColor
-            component.isBold = isBold
-            component.isItalic = isItalic
-            component.isUnderlined = isUnderlined
-            component.isStrikethrough = isStrikethrough
-            component.isObfuscated = isObfuscated
-            result.addExtra(component)
+            // 确保文本中不包含任何格式化代码
+            val cleanText = currentText.replace("§[0-9a-fk-orx]".toRegex(), "")
+            if (cleanText.isNotEmpty()) {
+                val component = TextComponent(cleanText)
+                if (currentColor != null) component.color = currentColor
+                component.isBold = isBold
+                component.isItalic = isItalic
+                component.isUnderlined = isUnderlined
+                component.isStrikethrough = isStrikethrough
+                component.isObfuscated = isObfuscated
+                result.addExtra(component)
+            }
         }
 
         return result
@@ -194,17 +205,26 @@ object ColorUtils {
 
     /**
      * 格式化字符串，将颜色代码转换为可读格式
-     * 支持 \aRRGGBB 格式的 Hex 颜色和 § 格式的原版颜色代码
+     * 支持 \aRRGGBB 格式的 Hex 颜色、& 格式的颜色代码和 § 格式的原版颜色代码
      *
      * @param text 包含颜色代码的文本
      * @return 处理后的文本
      */
     fun formatString(text: String): String {
-        // 处理 Hex 颜色代码
-        return text.replace(HEX_PATTERN) { matchResult ->
+        var result = text
+        
+        // 首先处理 & 颜色代码，转换为 § 格式
+        result = result.replace(AMPERSAND_PATTERN) { matchResult ->
+            "§${matchResult.groupValues[1]}"
+        }
+        
+        // 然后处理 Hex 颜色代码
+        result = result.replace(HEX_PATTERN) { matchResult ->
             val hexColor = matchResult.groupValues[1]
             "§x§${hexColor[0]}§${hexColor[1]}§${hexColor[2]}§${hexColor[3]}§${hexColor[4]}§${hexColor[5]}"
         }
+        
+        return result
     }
 
     /**
