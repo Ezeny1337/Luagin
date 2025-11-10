@@ -14,6 +14,7 @@ import tech.ezeny.luagin.lua.api.MessageAPI
 import tech.ezeny.luagin.lua.api.MySQLAPI
 import tech.ezeny.luagin.lua.api.NetworkAPI
 import tech.ezeny.luagin.lua.api.PermissionAPI
+import tech.ezeny.luagin.lua.api.ProtocolAPI
 import tech.ezeny.luagin.lua.api.UtilsAPI
 import tech.ezeny.luagin.lua.api.YamlAPI
 
@@ -21,7 +22,7 @@ class APIRegister(private val plugin: Luagin) {
     // API 名称列表，用于共享
     val apiNames = mutableListOf<String>()
 
-    // API提供者列表
+    // apiProviders 列表
     private val apiProviders = listOf(
         ColorAPI,
         EventsAPI,
@@ -34,13 +35,14 @@ class APIRegister(private val plugin: Luagin) {
         PermissionAPI,
         CommandAPI,
         NetworkAPI,
+        ProtocolAPI,
         GlobalsAPI,
         ItemsAPI,
         GuiAPI
     )
 
     init {
-        // 初始化所有API提供者
+        // 初始化所有 apiProviders
         apiProviders.forEach { it.initialize(plugin) }
     }
 
@@ -48,11 +50,10 @@ class APIRegister(private val plugin: Luagin) {
      * 注册所有 API 到 Lua 环境
      */
     fun registerAllAPIs(lua: Lua) {
-        // 注册所有API提供者的API
+        // 注册所有 API
         apiProviders.forEach { provider ->
             provider.registerAPI(lua)
 
-            // 收集API名称
             val names = provider.getAPINames()
             names.forEach { name ->
                 if (!apiNames.contains(name)) {

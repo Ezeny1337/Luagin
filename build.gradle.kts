@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "tech.ezeny"
-version = "3.3.0"
+version = "3.4.0"
 
 repositories {
     mavenCentral()
@@ -25,6 +25,7 @@ repositories {
 
 dependencies {
     compileOnly("org.spigotmc:spigot-api:1.21.9-R0.1-SNAPSHOT")
+    compileOnly("net.dmulloy2:ProtocolLib:5.4.0")
     implementation("party.iroiro.luajava:luajava:4.0.2")
     implementation("party.iroiro.luajava:luajit:4.0.2")
     runtimeOnly("party.iroiro.luajava:luajit-platform:4.0.2:natives-desktop")

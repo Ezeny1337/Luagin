@@ -4,6 +4,7 @@ main: tech.ezeny.luagin.Luagin
 api-version: 1.21
 authors: [Ezeny]
 description: Run Minecraft plugins using Lua scripting
+softdepend: [ProtocolLib]
 
 commands:
   luagin:

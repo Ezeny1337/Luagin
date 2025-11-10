@@ -48,6 +48,8 @@ object LanguageUtils {
             enConfig.set("log.info.webpanel_disabled", "Web panel disabled")
             enConfig.set("log.info.performance_enabled", "Performance monitor enabled")
             enConfig.set("log.info.performance_disabled", "Performance monitor disabled")
+            enConfig.set("log.info.protocol_lib_not_found", "ProtocolLib not found")
+            enConfig.set("log.info.protocol_api_disabled", "Protocol API disabled")
 
             // 警告级别消息
             enConfig.set("log.warning.event_not_found", "Event class {0}.{1} not found")
@@ -99,6 +101,14 @@ object LanguageUtils {
             enConfig.set("log.warning.webpanel_start_failed", "Failed to start web panel: {0}")
             enConfig.set("log.warning.invalid_update_interval", "Invalid update interval: {0}")
             enConfig.set("log.warning.performance_disabled", "Performance monitor is disabled")
+            enConfig.set("log.warning.protocol_lib_not_available", "ProtocolLib not avaiable")
+            enConfig.set("log.warning.handle_packet_failed", "Failed to handle packet for {0}: {1}")
+            enConfig.set("log.warning.send_packet_failed", "Failed to send packet: {0}")
+            enConfig.set("log.warning.received_packet_handler_failed", "Failed to handle the received packet: {0}")
+            enConfig.set("log.warning.invalid_packet_type", "Invalid protocol packet type: {0}")
+            enConfig.set("log.warning.create_packet_failed", "Failed to create packet {0}: {1}")
+            enConfig.set("log.warning.sent_packet_handler_failed", "Failed to handle the sent packet: {0}")
+            enConfig.set("log.warning.protocol_handler_error", "Protocol handler error: {0}")
 
             // 严重级别消息
             enConfig.set("log.severe.copy_shared_api_failed", "Shared API: {0} is nil in the main environment")
@@ -165,6 +175,8 @@ object LanguageUtils {
             zhConfig.set("log.info.webpanel_disabled", "Web 面板已禁用")
             zhConfig.set("log.info.performance_enabled", "性能监控已启用")
             zhConfig.set("log.info.performance_disabled", "性能监控已禁用")
+            zhConfig.set("log.info.protocol_lib_not_found", "找不到 ProtocolLib")
+            zhConfig.set("log.info.protocol_api_disabled", "Protocol API 已禁用")
 
             zhConfig.set("log.warning.event_not_found", "找不到事件类 {0}.{1}")
             zhConfig.set("log.warning.register_event_handler_failed", "注册事件处理器失败: {0}")
@@ -212,6 +224,14 @@ object LanguageUtils {
             zhConfig.set("log.warning.webpanel_start_failed", "Web 面板启动失败: {0}")
             zhConfig.set("log.warning.invalid_update_interval", "无效的更新频率: {0}")
             zhConfig.set("log.warning.performance_disabled", "性能监控已禁用")
+            zhConfig.set("log.warning.protocol_lib_not_available", "ProtocolLib 不可用")
+            zhConfig.set("log.warning.handle_packet_failed", "为 {0} 处理包时失败: {1}")
+            zhConfig.set("log.warning.send_packet_failed", "发送包失败: {0}")
+            zhConfig.set("log.warning.received_packet_handler_failed", "处理接收包时失败: {0}")
+            zhConfig.set("log.warning.invalid_packet_type", "无效的协议数据包类型: {0}")
+            zhConfig.set("log.warning.create_packet_failed", "创建数据包 {0} 失败: {1}")
+            zhConfig.set("log.warning.sent_packet_handler_failed", "处理发送包时失败: {0}")
+            zhConfig.set("log.warning.protocol_handler_error", "协议处理器出错: {0}")
 
             // 严重级别消息
             zhConfig.set("log.severe.copy_shared_api_failed", "共享 API: {0} 在主环境为 nil")

@@ -15,6 +15,7 @@ import tech.ezeny.luagin.lua.ScriptManager
 import tech.ezeny.luagin.network.NetworkManager
 import tech.ezeny.luagin.permissions.PermissionManager
 import tech.ezeny.luagin.performance.PerformanceMonitor
+import tech.ezeny.luagin.protocol.ProtocolManager
 import tech.ezeny.luagin.web.WebPanelManager
 
 val pluginModules = module {
@@ -29,6 +30,7 @@ val pluginModules = module {
     single { MySQLManager(get(), get()) }
     single { EventManager(get()) }
     single { ItemManager() }
+    single { ProtocolManager(get()) }
     single { WebPanelManager(get(), get(), get()) }
     single { APIRegister(get()) }
     single { LuaEnvManager(get()) }
@@ -45,6 +47,7 @@ fun getKoinModules() {
     getKoin().get<MySQLManager>()
     getKoin().get<EventManager>()
     getKoin().get<ItemManager>()
+    getKoin().get<ProtocolManager>()
     getKoin().get<WebPanelManager>()
     getKoin().get<APIRegister>()
     getKoin().get<LuaEnvManager>()

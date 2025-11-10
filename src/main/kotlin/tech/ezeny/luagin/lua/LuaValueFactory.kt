@@ -3,6 +3,7 @@ package tech.ezeny.luagin.lua
 import org.bukkit.command.CommandSender
 import org.bukkit.event.Event
 import party.iroiro.luajava.Lua
+import tech.ezeny.luagin.protocol.PacketWrapper
 import tech.ezeny.luagin.utils.PLog
 import java.lang.reflect.Method
 import java.util.concurrent.ConcurrentHashMap
@@ -31,7 +32,7 @@ object LuaValueFactory {
             is Collection<*> -> lua.push(obj)
             is Map<*, *> -> lua.push(obj)
             is Enum<*> -> lua.push(obj.name)
-            is Event, is CommandSender -> {
+            is Event, is CommandSender, is PacketWrapper -> {
                 createCustomUserdata(lua, obj)
             }
 
@@ -142,10 +143,15 @@ object LuaValueFactory {
 
                     if (matchingMethod != null) {
                         try {
+                            // 设置可访问性
+                            matchingMethod.isAccessible = true
+                            
                             val result = if (argCount == 0) {
                                 matchingMethod.invoke(self)
                             } else {
-                                val args = Array(argCount) { i -> callState.toJavaObject(i + 2) }
+                                val args = Array(argCount) { i -> 
+                                    coerceLuaToJava(callState, i + 2, matchingMethod.parameterTypes[i])
+                                }
                                 matchingMethod.invoke(self, *args)
                             }
                             pushJavaObject(callState, result)
@@ -162,6 +168,53 @@ object LuaValueFactory {
                     }
                 }
                 return@push 1
+            }
+
+            // 特殊处理 PacketWrapper：尝试转发到 PacketContainer
+            if (self is PacketWrapper) {
+                try {
+                    val packetMethod = PacketWrapper.findPacketMethod(key, 0) 
+                        ?: PacketWrapper.findPacketMethod(camelKey, 0)
+                    
+                    if (packetMethod != null) {
+                        // 返回一个 Lua 函数来调用 PacketContainer 的方法
+                        luaState.push { callState ->
+                            val totalArgs = callState.top
+                            val argCount = if (totalArgs > 0) totalArgs - 1 else 0
+                            
+                            val method = PacketWrapper.findPacketMethod(key, argCount)
+                                ?: PacketWrapper.findPacketMethod(camelKey, argCount)
+                            
+                            if (method != null) {
+                                try {
+                                    // 设置可访问性
+                                    method.isAccessible = true
+                                    
+                                    val result = if (argCount == 0) {
+                                        method.invoke(self.getHandle())
+                                    } else {
+                                        val args = Array(argCount) { i ->
+                                            coerceLuaToJava(callState, i + 2, method.parameterTypes[i])
+                                        }
+                                        method.invoke(self.getHandle(), *args)
+                                    }
+                                    pushJavaObject(callState, result)
+                                    return@push 1
+                                } catch (e: Exception) {
+                                    PLog.warning("log.warning.method_call_failed", key, e.message ?: "Unknown error")
+                                    callState.pushNil()
+                                    return@push 1
+                                }
+                            } else {
+                                callState.pushNil()
+                                return@push 1
+                            }
+                        }
+                        return@push 1
+                    }
+                } catch (e: Exception) {
+                    // 忽略错误
+                }
             }
 
             PLog.warning("log.warning.method_not_found", key)
@@ -264,13 +317,15 @@ object LuaValueFactory {
     }
 
     /**
-     * 将Lua值转换为Java对象
+     * 将 Lua 值转换为 Java 对象
      */
     private fun coerceLuaToJava(lua: Lua, index: Int, targetType: Class<*>): Any? {
         return when (targetType) {
             Boolean::class.java, Boolean::class.javaPrimitiveType -> lua.toBoolean(index)
-            Int::class.java, Int::class.javaPrimitiveType -> lua.toInteger(index)
+            Int::class.java, Int::class.javaPrimitiveType -> lua.toInteger(index).toInt()
             Long::class.java, Long::class.javaPrimitiveType -> lua.toInteger(index)
+            Byte::class.java, Byte::class.javaPrimitiveType -> lua.toInteger(index).toByte()
+            Short::class.java, Short::class.javaPrimitiveType -> lua.toInteger(index).toShort()
             Float::class.java, Float::class.javaPrimitiveType -> lua.toNumber(index).toFloat()
             Double::class.java, Double::class.javaPrimitiveType -> lua.toNumber(index)
             String::class.java -> lua.toString(index)

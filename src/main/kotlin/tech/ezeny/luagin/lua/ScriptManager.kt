@@ -1,9 +1,12 @@
 package tech.ezeny.luagin.lua
 
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import party.iroiro.luajava.Lua
 import party.iroiro.luajava.LuaException
 import tech.ezeny.luagin.Luagin
 import tech.ezeny.luagin.events.EventManager
+import tech.ezeny.luagin.protocol.ProtocolManager
 import tech.ezeny.luagin.utils.CommunicationUtils
 import tech.ezeny.luagin.utils.PLog
 import tech.ezeny.luagin.utils.ScriptUtils
@@ -13,7 +16,8 @@ class ScriptManager(
     plugin: Luagin,
     private val eventManager: EventManager,
     private val luaEnvManager: LuaEnvManager
-) {
+) : KoinComponent {
+    private val protocolManager: ProtocolManager by inject()
     private val scriptsFolder: File = File(plugin.dataFolder, "scripts")
     private val scriptEnvironments = mutableMapOf<String, Lua>()
 
@@ -60,6 +64,8 @@ class ScriptManager(
     fun reloadAllScripts(): Int {
         // 清理事件处理器
         eventManager.clearHandlers()
+        // 清理协议处理器
+        protocolManager.clearAllHandlers()
         // 清理共享函数
         CommunicationUtils.clearAllFunctions()
 
@@ -80,6 +86,9 @@ class ScriptManager(
 
         return try {
             ScriptUtils.setCurrentScript(scriptFile.name)
+            eventManager.setCurrentScript(scriptFile.name)
+            protocolManager.setCurrentScript(scriptFile.name)
+            
             val scriptLua = luaEnvManager.createScriptEnvironment()
             PLog.info("log.info.registered_lua_api", scriptFile.name)
             
@@ -120,6 +129,8 @@ class ScriptManager(
 
         // 清理事件处理器
         eventManager.clearHandlersForScript(scriptFile.name)
+        // 清理协议处理器
+        protocolManager.clearHandlersForScript(scriptFile.name)
         // 清理共享函数和环境
         CommunicationUtils.clearScriptFunctions(scriptFile.name)
         // 清理 ScriptUtils 中的 Lua 实例

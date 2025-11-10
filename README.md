@@ -78,6 +78,11 @@ The default username and password are "admin".
 - The support for `Bukkit` and its branches depends on the compatibility between the `Spigot` API and them. (**currently
   almost compatible**)
 
+### 📦 Dependencies
+
+- **Required**: None - Luagin works standalone
+- **Optional**: [ProtocolLib](https://www.spigotmc.org/resources/protocollib.1997/) - Required only if you want to use the `protocol` API to monitor, modify or cancel network packets
+
 ## 🛠️ Support
 
 If you want to report bugs or suggest new features, you

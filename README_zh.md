@@ -71,6 +71,11 @@ https://ezeny.gitbook.io/luagin-docs
 - 支持的游戏版本取决于 **服务端 API**
 - 对 `Bukkit` 及其分支的支持取决于 `Spigot` API 在它们之间的兼容性 (**目前几乎兼容**)
 
+### 📦 依赖
+
+- **必需**: 无 - Luagin 可独立运行
+- **可选**: [ProtocolLib](https://www.spigotmc.org/resources/protocollib.1997/) - 仅当你需要使用 `protocol` API 监听、修改或拦截数据包时才需要安装
+
 ## 🛠️ 支持
 
 如果你想报告 bug 或建议新功能，可以在 [GitHub 上开一个 issue](https://github.com/Ezeny1337/Luagin/issues)
